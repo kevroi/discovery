@@ -1,5 +1,0 @@
-setup.py
-discovery.egg-info/PKG-INFO
-discovery.egg-info/SOURCES.txt
-discovery.egg-info/dependency_links.txt
-discovery.egg-info/top_level.txt
