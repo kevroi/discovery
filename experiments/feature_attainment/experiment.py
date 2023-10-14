@@ -1,0 +1,35 @@
+import sys
+import numpy as np
+import pickle
+import copy
+from tqdm import tqdm
+
+import utils.rlglue as rlglue
+from environments.environment import ToyEnvironment, GridEnvironment, I_MazeEnvironment
+from agents.TD_lambda import TDLambdaAgent
+from eigenoptions.options import Options
+
+env = GridEnvironment()
+max_row, max_col = env.get_grid_dimension() 
+agent = TDLambdaAgent(max_row=max_row, max_col=max_col)
+agent.set_alpha(0.1)
+agent.set_discount(0.9)
+glue = rlglue.RLGlue(env, agent)
+
+num_runs = 100
+num_episodes = 100
+cum_reward = np.zeros(num_episodes)
+
+for run in tqdm(range(num_runs)):
+    for ep in range(num_episodes):
+        # run episode
+        glue.episode(100)
+        learned_V = agent.get_V()
+        agent.set_V(learned_V)
+        glue.episode(100)
+        cum_reward[ep] += glue.get_total_reward()
+        glue.cleanup()
+cum_reward /= float(num_runs)
+
+np.save(f'experiments/feature_attainment/data_files/{env.name}_average_return', cum_reward)
+

@@ -8,17 +8,17 @@ default_action_set = [(0, 1), (0, -1), (1, 0), (-1, 0)] # R, L, D, U
 
 TERMINATE_ACTION = (0,0)
 
-# def initialize_env(env_type):
+def initialize_env(env_type):
 
-#     if env_type == "Grid":
-#         return GridEnvironment()
-#     elif env_type == "4-Room":
-#         return RoomEnvironment()
-#     elif env_type == "I-Maze":
-#         return I_MazeEnvironment()
-#     else:
-#         print("Invalid Environment: " + env_type)
-#         exit()
+    if env_type == "Grid":
+        return GridEnvironment()
+    elif env_type == "4-Room":
+        return RoomEnvironment()
+    elif env_type == "I-Maze":
+        return I_MazeEnvironment()
+    else:
+        print("Invalid Environment: " + env_type)
+        exit()
 
 # returns relevant environment information
 def parse_env(env_grid):
@@ -52,7 +52,7 @@ class BaseEnvironment(object):
 
         self.action_set = default_action_set[:]
         self.default_max_actions = len(self.action_set) # will stay fixed
-        self.max_actions = len(self.action_set) # can increase
+        self.max_actions = len(self.action_set) # can increase if we add more options
 
         self.obstacle_vector = obstacle_vector
 
