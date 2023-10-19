@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 from utils.plot_utils import to_env_list
+import matplotlib.pyplot as plt
 
 
 # Default actions in GridWorld environment
@@ -25,23 +26,27 @@ def parse_env(env_grid):
     max_row = len(env_grid)
     max_col = len(env_grid[0])
     obstacles = []
+    lava = []
     start_state = (-1,-1)
     goal_state = (-1,-1)
     for r in range(max_row):
         for c in range(max_col):
             if env_grid[r][c] == 'X':
                 obstacles.append((r,c))
+            elif env_grid[r][c] == 'L':
+                lava.append((r,c))
             elif env_grid[r][c] == 'S':
                 start_state = (r,c)
             elif env_grid[r][c] == 'G':
                 goal_state = (r,c)
 
-    return max_row, max_col, start_state, goal_state, obstacles
+    return max_row, max_col, start_state, goal_state, obstacles, lava
 
 class BaseEnvironment(object):
 
     def __init__(self, max_row, max_col, start_state,
-                 goal_state, obstacle_vector = [], reward_vector = None):
+                 goal_state, obstacle_vector = [], lava_vector = [],
+                 reward_vector = None):
         states_rc = [(r, c) for r in range(max_row) for c in range(max_col)]
         self.states_rc = states_rc # all possible states (r,c)
         self.max_row, self.max_col = max_row, max_col
@@ -55,6 +60,7 @@ class BaseEnvironment(object):
         self.max_actions = len(self.action_set) # can increase if we add more options
 
         self.obstacle_vector = obstacle_vector
+        self.lava_vector = lava_vector
 
         if reward_vector is None:
             # Reward is 0.0 everywhere, and 1.0 in goal state
@@ -95,6 +101,7 @@ class BaseEnvironment(object):
             print ("current_state", self.current_state)
 
         action = self.action_set[action]
+        # print("state_rc", self.states_rc[self.current_state[0]], "action", action)
 
         # if terminate action
         if action == TERMINATE_ACTION:
@@ -124,14 +131,18 @@ class BaseEnvironment(object):
                 ns = self.states_rc.index(ns) # next state
                 reward = self.reward_vector[ns] - self.reward_vector[s] #- 0.001 # small step penalty
 
+            # check lava
+            if self.states_rc[ns] in self.lava_vector:
+                reward = -10.0
+        
             self.current_state[0] = ns
-
+        # print(reward)
         # check terminal
         if self.goal_state != (-1,-1) and \
             self.states_rc.index(self.goal_state) == self.current_state[0]:
 
             self.current_state = None
-            result = {"reward": reward, "state": None, "isTerminal": True}
+            result = {"reward": 1.0, "state": None, "isTerminal": True}
             return result
 
         else:
@@ -169,59 +180,122 @@ class BaseEnvironment(object):
 class GridEnvironment(BaseEnvironment):
     def __init__(self):
         grid_env = to_env_list('environments/gridenv.txt')
-        max_row, max_col, start_state, goal_state, obstacles = parse_env(grid_env)
+        max_row, max_col, start_state, goal_state, obstacles, lava = parse_env(grid_env)
         self.max_row = max_row
         self.max_col = max_col
         self.name = "grid"
 
         BaseEnvironment.__init__(self, max_row, max_col, start_state,
-                 goal_state, obstacles)
+                 goal_state, obstacles, lava)
 
 
 class RoomEnvironment(BaseEnvironment):
     def __init__(self):
         room_env = to_env_list('environments/room.txt')
-        max_row, max_col, start_state, goal_state, obstacles = parse_env(room_env)
+        max_row, max_col, start_state, goal_state, obstacles, lava = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
         self.name = "rooms"
 
         BaseEnvironment.__init__(self, max_row, max_col, start_state,
-                 goal_state, obstacles)
+                 goal_state, obstacles, lava)
 
 
 
 class I_MazeEnvironment(BaseEnvironment):
     def __init__(self):
         I_maze_env = to_env_list('environments/imaze.txt')
-        max_row, max_col, start_state, goal_state, obstacles = parse_env(I_maze_env)
+        max_row, max_col, start_state, goal_state, obstacles, lava = parse_env(I_maze_env)
         self.max_row = max_row
         self.max_col = max_col
         self.name = "IMaze"
 
         BaseEnvironment.__init__(self, max_row, max_col, start_state,
-                 goal_state, obstacles)
+                 goal_state, obstacles, lava)
 
 
 class HallEnvironment(BaseEnvironment):
     def __init__(self):
         room_env = to_env_list('environments/hall.txt')
-        max_row, max_col, start_state, goal_state, obstacles = parse_env(room_env)
+        max_row, max_col, start_state, goal_state, obstacles, lava = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
         self.name = "hall"
 
         BaseEnvironment.__init__(self, max_row, max_col, start_state,
-                 goal_state, obstacles)
+                 goal_state, obstacles, lava)
 
 
 class ToyEnvironment(BaseEnvironment):
     def __init__(self, name):
         room_env = to_env_list(f"environments/{name}.txt")
-        max_row, max_col, start_state, goal_state, obstacles = parse_env(room_env)
+        max_row, max_col, start_state, goal_state, obstacles, lava = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
         self.name = name
 
         BaseEnvironment.__init__(self, max_row, max_col, start_state,
-                 goal_state, obstacles)
+                 goal_state, obstacles, lava)
+
+
+def plot_gridworld(file_path, hallways = None):
+    with open(file_path, 'r') as file:
+        grid_data = file.read().splitlines()
+
+    rows = len(grid_data)
+    cols = len(grid_data[0])
+
+    grid = [[cell for cell in row] for row in grid_data]
+
+    for row in range(rows):
+        for col in range(cols):
+            if grid[row][col] == 'S':
+                start_x, start_y = col, row
+            elif grid[row][col] == 'G':
+                goal_x, goal_y = col, row
+
+    if hallways:
+        for hallway in hallways:
+            grid[hallway[0]][hallway[1]] = 'H'
+            # for row in range(hallway[0], hallway[1] + 1):
+            #     for col in range(hallway[2], hallway[3] + 1):
+            #         grid[row][col] = 'H'
+    
+
+    plt.figure(figsize=(cols, rows))
+    plt.imshow([[ colour_from_letter(cell) for cell in row] for row in grid], cmap='gray', interpolation='none', aspect='equal')
+
+    # # Mark the start and goal positions
+    # plt.plot(start_x, start_y, 'bs', markersize=40)
+    # plt.plot(goal_x, goal_y, 'gs', markersize=40)
+
+    # Customize grid lines
+    plt.xticks(range(cols), [])
+    plt.yticks(range(rows), [])
+    
+    # Draw black grid lines
+    for i in range(cols + 1):
+        plt.axvline(x=i - 0.5, color='#45474B', linewidth=2)
+    for i in range(rows + 1):
+        plt.axhline(y=i - 0.5, color='#45474B', linewidth=2)
+
+    plt.gca().set_facecolor('white')
+    plt.show()
+
+def colour_from_letter(letter):
+    if letter == 'X':
+        return [114,154,159]
+    elif letter == 'S':
+        return [75,162,185]
+    elif letter == 'G':
+        return [173,226,181]
+    elif letter == 'H':
+        return [219,92,84]
+    elif letter =='L':
+        return [252,223,141]
+    else:
+        return [255,255,255]
+
+# if __name__ == "__main__":
+#     file_path = "your_environment.txt"  # Replace with the path to your text file
+#     plot_gridworld(file_path)

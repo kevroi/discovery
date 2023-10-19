@@ -15,9 +15,9 @@ class TDLambdaAgent(object):
         self.max_actions = len(self.action_set) # can increase
 
         self.V = np.zeros((max_row, max_col))
+        self.e = np.zeros((max_row, max_col))
         self.states_rc = [(r, c) for r in range(max_row)
                           for c in range(max_col)]
-
         self.last_state, self.last_action = -1, -1
         self.steps = 0
         self.max_row, self.max_col = max_row, max_col
@@ -51,10 +51,29 @@ class TDLambdaAgent(object):
         # la: integer representation of last action
         la = self.last_action
 
+        # UWT Procedure
+        rho = 1.0
+        if current_state in self.subgoals: # beta = 1
+            target = reward + self.get_stopping_bonus(current_state)
+            delta = target - self.V[lrow][lcol]
+            self.e[current_state] += 1 # add the gradient (replacing trace)
+            self.e *= rho # IS ratio
+            self.V += self.alpha*delta*self.e
+        else: # beta = 0
+            target = reward + (self.discount)*(self.V[crow][ccol])
+            delta = target - self.V[lrow][lcol]
+            self.e[current_state] += 1 # add the gradient (replacing trace)
+            self.e *= rho # IS ratio
+            self.V += self.alpha*delta*self.e
+            self.e *= self.discount*self.lmbda
+
+        # delta = target - self.V[lrow][lcol]
+        # self.UWT(self.V, self.e, current_state, self.alpha, delta, rho, self.discount, self.lmbda)
+
         # Update Q value
-        target = reward + (self.discount)*(self.V[crow][ccol])
+        # target = reward + (self.discount)*(self.V[crow][ccol])
         # Update: New Estimate = Old Estimate + StepSize[Target - Old Estimate]
-        self.V[lrow][lcol] += self.alpha*(target - self.V[lrow][lcol])
+        # self.V[lrow][lcol] += self.alpha*(target - self.V[lrow][lcol])
 
         # Choose action
         ca = self.random_uniform(crow,ccol)
@@ -79,6 +98,14 @@ class TDLambdaAgent(object):
         # Resetting last_state and last_action for the next episode
         self.last_state, self.last_action = -1, -1
         return
+    
+    # def UWT(self, current_state, reward, delta):
+    #     lrow, lcol = self.states_rc[self.last_state]
+    #     e[current_state] += 1 # add the gradient (replacing trace)
+    #     e *= 1.0 # IS ratio
+    #     target = reward + (self.discount)*(self.V[current_state[0]][current_state[1]])
+    #     self.V[lrow][lcol] += self.alpha*delta
+    #     e *= self.discount*self.lmbda(1-beta)
 
     def cleanup(self):
         self.V = np.zeros((self.max_row, self.max_col))
@@ -100,9 +127,15 @@ class TDLambdaAgent(object):
     def set_discount(self, discount):
         self.discount = discount
 
+    def set_lmbda(self, lmbda):
+        self.lmbda = lmbda
+
     def set_dimension(self, dimension):
         max_rows, max_cols = int(dimension[0]), int(dimension[1])
         self.__init__(self, max_rows, max_cols)
+
+    def set_subgoals(self, subgoals):
+        self.subgoals = subgoals
 
     def get_steps(self):
         return self.steps
@@ -112,6 +145,12 @@ class TDLambdaAgent(object):
 
     def set_V(self, V):
         self.V = V
+
+    def get_stopping_bonus(self, state):
+        if state in self.subgoals:
+            return 10.0
+        else:
+            return 0.0
 
     def message(self, in_message):
         print("Invalid agent message: " + in_message)
