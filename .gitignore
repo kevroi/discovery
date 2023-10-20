@@ -1,3 +1,8 @@
 venv/
 .DS_Store
 discovery.egg-info
+
+#Logging
+wandb/
+videos/
+runs/
