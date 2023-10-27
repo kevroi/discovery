@@ -10,22 +10,22 @@ from abc import abstractmethod
 class TwoRoomEnv(MiniGridEnv):
     def __init__(
         self,
-        # size=8,
         width=15,
         height=8,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
+        hallway_pos=(3,7),
         max_steps: int = None,
         **kwargs,
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
+        self.hallway_pos = hallway_pos
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
 
         super().__init__(
             mission_space=mission_space,
-            # grid_size=size,
             width=width,
             height=height,
             max_steps=1000,
@@ -46,11 +46,11 @@ class TwoRoomEnv(MiniGridEnv):
         self.grid.wall_rect(0, 0, width, height)
 
         # Generate verical separation wall
-        for i in range(0, 3):
-            self.grid.set(7, i, Wall())
+        for i in range(0, self.hallway_pos[0]):
+            self.grid.set(self.hallway_pos[1], i, Wall())
 
-        for i in range(4, height):
-            self.grid.set(7, i, Wall())
+        for i in range(self.hallway_pos[0]+1, height):
+            self.grid.set(self.hallway_pos[1], i, Wall())
         
         # Place the door and key
         # self.grid.set(5, 6, Door(COLOR_NAMES[0], is_locked=True))
