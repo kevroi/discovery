@@ -7,14 +7,14 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from cnn import MinigridFeaturesExtractor
 import wandb
 from wandb.integration.sb3 import WandbCallback
-from two_room_env import TwoRoomEnv
+from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv
 
 config = {
     "policy_type": "CnnPolicy",
-    "total_timesteps": 5e5,
+    "total_timesteps": 1e6,
     # "env_name": "MiniGrid-Empty-5x5-v0",
-    "env_name": "Two-Rooms",
-    "feat_dim":8,
+    "env_name": "Four-Rooms",
+    "feat_dim":12,
     "fully_obs":True,
 }
 run = wandb.init(
@@ -39,7 +39,7 @@ policy_kwargs = dict(
 #     return env
 
 def make_env(full_obs=config["fully_obs"]):
-    env = TwoRoomEnv(render_mode="rgb_array")
+    env = FourRoomEnv(render_mode="rgb_array")
     if full_obs:
         env = FullyObsWrapper(env)
     env = ImgObsWrapper(env)
