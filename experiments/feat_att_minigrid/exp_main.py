@@ -7,15 +7,18 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from cnn import MinigridFeaturesExtractor
 import wandb
 from wandb.integration.sb3 import WandbCallback
-from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv
+from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv, FourRoomChainEnv, SixRoomChainEnv
 
 config = {
     "policy_type": "CnnPolicy",
-    "total_timesteps": 1e6,
+    "total_timesteps": 2e6,
     # "env_name": "MiniGrid-Empty-5x5-v0",
-    "env_name": "Four-Rooms",
-    "feat_dim":12,
+    "env_name": "Four-Room-Chain",
+    "feat_dim":24,
     "fully_obs":True,
+    "random_starts":True,
+    "random_goal":True,
+    "goal_set": [(24, 6), (4, 6)],
 }
 run = wandb.init(
                 project="PPO_on_MiniGrid",
@@ -38,9 +41,11 @@ policy_kwargs = dict(
 #     env = Monitor(env)
 #     return env
 
-def make_env(full_obs=config["fully_obs"]):
-    env = FourRoomEnv(render_mode="rgb_array")
-    if full_obs:
+def make_env(config=config):
+    env = FourRoomChainEnv(render_mode="rgb_array",
+                           random_starts=config["random_starts"],
+                           random_goal=config["random_goal"])
+    if config["fully_obs"]:
         env = FullyObsWrapper(env)
     env = ImgObsWrapper(env)
     env = Monitor(env)
@@ -50,7 +55,7 @@ env = DummyVecEnv([make_env])
 env = VecVideoRecorder(
                         env,
                         f"videos/{run.id}",
-                        record_video_trigger=lambda x: x % 10000 == 0,
+                        record_video_trigger=lambda x: x % 100000 == 0,
                         video_length=200,
                     )
 

@@ -171,7 +171,7 @@ class FourRoomChainEnv(MiniGridEnv):
         self.hallway_pos = hallway_pos
         self.random_goal = random_goal
         self.goal_set = goal_set
-        random.seed(42) # seed for goal positions
+        random.seed(0) # seed for goal positions
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
 
