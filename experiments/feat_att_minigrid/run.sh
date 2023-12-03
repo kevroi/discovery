@@ -6,8 +6,8 @@
 #SBATCH --mem=6G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=roice@ualberta.ca
-#SBATCH -o /home/roice/scratch/discovery/logs/dqn_test_1run.out # Standard output
-#SBATCH -e /home/roice/scratch/discovery/logs/dqn_test_1run.err # Standard error
+#SBATCH -o /home/roice/scratch/discovery/logs/test.out # Standard output
+#SBATCH -e /home/roice/scratch/discovery/logs/test.err # Standard error
 module load python/3.9
-source ~/python309/bin/activate
+source ~/venv/bin/activate
 python main.py

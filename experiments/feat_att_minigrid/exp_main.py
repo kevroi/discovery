@@ -11,10 +11,10 @@ from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv, Fo
 
 config = {
     "policy_type": "CnnPolicy",
-    "total_timesteps": 2e6,
+    "total_timesteps": 1e5,
     # "env_name": "MiniGrid-Empty-5x5-v0",
     "env_name": "Four-Room-Chain",
-    "feat_dim":24,
+    "feat_dim":32,
     "fully_obs":True,
     "random_starts":True,
     "random_goal":True,
