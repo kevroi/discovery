@@ -12,6 +12,8 @@ from minigrid.core.constants import (
     IDX_TO_OBJECT,
 )
 
+from stable_baselines3.common.vec_env.util import obs_space_info
+
 class TwoRoomEnv(MiniGridEnv):
     def __init__(
         self,
@@ -154,7 +156,7 @@ class FourRoomChainEnv(MiniGridEnv):
         height=8,
         random_starts=True,
         random_goal=False,
-        agent_start_pos=(27, 6),
+        agent_start_pos=(1, 1),
         agent_start_dir=0,
         hallway_pos=[(3,7), (5,14), (1,21), (4,28), (3,35)],
         # goal_set = [(1,1), (1,6), (27, 1), (27, 6)], # four corners - only used if random_goal is True
