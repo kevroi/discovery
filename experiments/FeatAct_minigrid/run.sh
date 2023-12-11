@@ -9,5 +9,5 @@
 #SBATCH -o /home/roice/scratch/discovery/logs/test.out # Standard output
 #SBATCH -e /home/roice/scratch/discovery/logs/test.err # Standard error
 module load python/3.9
-source ~/venv/bin/activate
+source venv/bin/activate
 python main.py
