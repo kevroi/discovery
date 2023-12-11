@@ -1,17 +1,16 @@
-import minigrid
-import gymnasium as gym
-from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, RGBImgPartialObsWrapper, FullyObsWrapper
 from agents.ppo import PPO
-# from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder, VecTransposeImage
 from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
 from stable_baselines3.common.env_util import make_vec_env
-from cnn import MinigridFeaturesExtractor
+import minigrid
+from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, RGBImgPartialObsWrapper, FullyObsWrapper
+import gymnasium as gym
 import wandb
 from wandb.integration.sb3 import WandbCallback
+from cnn import MinigridFeaturesExtractor
 from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv, FourRoomChainEnv, SixRoomChainEnv
-from env_helpers import MinigridRGBImgObsWrapper
+print("all loaded")
 
 config = {
     "policy_type": "CnnPolicy",
