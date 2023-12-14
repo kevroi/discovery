@@ -1,6 +1,7 @@
 venv/
 .DS_Store
 discovery.egg-info
+__pycache__/
 
 #Logging
 wandb/
