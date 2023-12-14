@@ -41,6 +41,6 @@ if config["record_video"]:
     
 model = PPO(config["policy_type"], env, verbose=1,
             tensorboard_log=f"runs/{run.id}")
-model.learn(total_timesteps=config["total_timesteps"],
+model.learn(total_timesteps=config["timesteps"],
             )
 
