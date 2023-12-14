@@ -1,15 +1,10 @@
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
-import numpy as np
-import matplotlib.pyplot as plt
-import torch
 from stable_baselines3 import PPO
 import gymnasium as gym
 from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper
 from cnn import MinigridFeaturesExtractor
-from stable_baselines3.common.utils import obs_as_tensor
 import wandb
-from wandb.integration.sb3 import WandbCallback
 
 ## HELPER FUNCTIONS ##
 def make_env():
@@ -52,7 +47,7 @@ if config["record_video"]:
                         )
 
 model = PPO(config["policy_type"], env, policy_kwargs=policy_kwargs,
-            verbose=1, tensorboard_log=f"runs/test")
+            verbose=1, tensorboard_log=f"runs/{run.id}")
 model.learn(total_timesteps=config["total_timesteps"],
             )
-model.save(f'./models/ppo_{config["env_name"]}')
+model.save(f'experiments/FeatAct_minigrid/models/ppo_{config["env_name"]}')
