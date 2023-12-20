@@ -17,11 +17,11 @@ def make_env():
 
 config = {
     "policy_type": "CnnPolicy",
-    "total_timesteps": 1e5,
+    "total_timesteps": 1e6,
     "env_name": "MiniGrid-DoorKey-8x8-v0",
     "feat_dim":24,
     "record_video":True,
-    "n_envs":1,
+    "n_envs":10,
 }
 
 policy_kwargs = dict(

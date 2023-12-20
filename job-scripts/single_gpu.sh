@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=PPO_DK8_phi32
+#SBATCH --job-name=PPO_DK8_phi24
 #SBATCH --account=rrg-whitem
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=8G
-#SBATCH --time=0-2:59
+#SBATCH --time=0-11:59
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=roice@ualberta.ca
 #SBATCH -o /home/roice/scratch/discovery/logs/%x.out
