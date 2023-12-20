@@ -13,5 +13,6 @@
 
 module load python/3.9
 source venv/bin/activate
+pip list
 wandb login
 python $me/discovery/experiments/FeatAct_atari/run_atari.py
