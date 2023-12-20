@@ -19,7 +19,7 @@ config = {
     "policy_type": "CnnPolicy",
     "total_timesteps": 1e5,
     "env_name": "MiniGrid-DoorKey-8x8-v0",
-    "feat_dim":12,
+    "feat_dim":24,
     "record_video":True,
     "n_envs":1,
 }
