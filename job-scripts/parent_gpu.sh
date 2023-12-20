@@ -11,14 +11,14 @@
 #SBATCH -e /home/roice/scratch/discovery/logs/%x.err
 
 # Define your parameter sweep values
-env_name='MiniGrid-Empty-8x8-v0' 
-lrs=(0.1)
-num_runs=10
+env_name='MiniGrid-DoorKey-8x8-v0' 
+lrs=(0.1 0.01)
+num_runs=30
 
 # Loop over the parameter sweep values
 for lr in ${lrs[@]}; do
     for i in $(seq 1 $num_runs); do
         # Submit a job for each parameter combination
-        sbatch --job-name="PPO_${env_name}_${lr}_run_${i}" --export=ENV_NAME="$env_name",LR="$lr" job-scripts/child_gpu.sh
+        sbatch --job-name="PPO_${env_name}_${lr}_run_${i}" --export=ENV_NAME="$env_name",LR="$lr" job-scripts/child_cpu.sh
     done
 done
