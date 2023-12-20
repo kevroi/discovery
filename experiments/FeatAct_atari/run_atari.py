@@ -19,10 +19,10 @@ def make_env():
 
 config = {
     "env_name": "ALE/MontezumaRevenge-v5",
-    "n_envs": 4, # TODO check if this means the same as PPO n_envs
+    "n_envs": 1, # TODO check if this means the same as PPO n_envs
     "env_seed": 0,
     "policy_type": "CnnPolicy",
-    "timesteps": 1e4,
+    "timesteps": 1e6,
     "record_video": False,
 }
 

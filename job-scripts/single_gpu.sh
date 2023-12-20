@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=PPO_DK8_phi24
+#SBATCH --job-name=PPO_MontRev
 #SBATCH --account=rrg-whitem
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=8G
-#SBATCH --time=0-11:59
+#SBATCH --time=0-2:59
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=roice@ualberta.ca
 #SBATCH -o /home/roice/scratch/discovery/logs/%x.out
@@ -14,4 +14,4 @@
 module load python/3.9
 source venv/bin/activate
 wandb login
-python $me/discovery/experiments/FeatAct_minigrid/run_minigrid.py
+python $me/discovery/experiments/FeatAct_atari/run_atari.py
