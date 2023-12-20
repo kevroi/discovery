@@ -22,6 +22,7 @@ config = {
     "feat_dim":24,
     "record_video":True,
     "n_envs":10,
+    "lr": 1e-4, # default is 3e-4
 }
 
 policy_kwargs = dict(
@@ -46,7 +47,9 @@ if config["record_video"]:
                             video_length=200,
                         )
 
-model = PPO(config["policy_type"], env, policy_kwargs=policy_kwargs,
+model = PPO(config["policy_type"], env,
+            learning_rate=config["lr"],
+            policy_kwargs=policy_kwargs,
             verbose=1, tensorboard_log=f"runs/{run.id}")
 model.learn(total_timesteps=config["total_timesteps"],
             )
