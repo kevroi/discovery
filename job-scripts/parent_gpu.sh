@@ -19,6 +19,6 @@ num_runs=10
 for lr in ${lrs[@]}; do
     for i in $(seq 1 $num_runs); do
         # Submit a job for each parameter combination
-        sbatch --job_name="PPO_${env_name}_${lr}_run_${i}" --export=ENV_NAME="$env_name",LR="$lr" job-scripts/child_gpu.sh
+        sbatch --job-name="PPO_${env_name}_${lr}_run_${i}" --export=ENV_NAME="$env_name",LR="$lr" job-scripts/child_gpu.sh
     done
 done
