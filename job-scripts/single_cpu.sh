@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=PPO_DK8_phi32
+#SBATCH --job-name=PPO_MontRev_WB
 #SBATCH --account=rrg-whitem
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
@@ -14,4 +14,4 @@
 module load python/3.9
 source venv/bin/activate
 wandb login
-python $me/discovery/experiments/FeatAct_minigrid/run_minigrid.py
+python $me/discovery/experiments/FeatAct_atari/run_atari.py

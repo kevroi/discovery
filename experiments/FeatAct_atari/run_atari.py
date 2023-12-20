@@ -1,8 +1,12 @@
+print("loading")
 from stable_baselines3.common.vec_env import VecVideoRecorder
+print("loaded recorder")
 from stable_baselines3.common.env_util import make_atari_env
+print("loaded atari env")
 from stable_baselines3.common.vec_env import VecFrameStack
+print("loaded vec stack")
 from stable_baselines3 import PPO
-import wandb
+print("loaded ppo")
 
 ## HELPER FUNCTIONS ##
 def make_env():
@@ -18,29 +22,31 @@ config = {
     "n_envs": 4, # TODO check if this means the same as PPO n_envs
     "env_seed": 0,
     "policy_type": "CnnPolicy",
-    "timesteps": 1e5,
-    "record_video": True,
+    "timesteps": 1e4,
+    "record_video": False,
 }
 
-run = wandb.init(
-                project="PPO_on_Atari_Tests",
-                config=config,
-                sync_tensorboard=True, 
-                monitor_gym=True,
-                save_code=True,
-                )
+# run = wandb.init(
+#                 project="PPO_on_Atari_Tests",
+#                 config=config,
+#                 sync_tensorboard=True, 
+#                 # monitor_gym=True,
+#                 save_code=True,
+#                 )
 
 env = make_env()
-if config["record_video"]:
-    env = VecVideoRecorder(
-                            env,
-                            f"videos/{run.id}",
-                            record_video_trigger=lambda x: x % 100000 == 0,
-                            video_length=200,
-                        )
+print("env made")
+# if config["record_video"]:
+#     env = VecVideoRecorder(
+#                             env,
+#                             f"videos/{run.id}",
+#                             record_video_trigger=lambda x: x % 100000 == 0,
+#                             video_length=200,
+#                         )
     
-model = PPO(config["policy_type"], env, verbose=1,
-            tensorboard_log=f"runs/{run.id}")
+model = PPO(config["policy_type"], env, verbose=1)
+print("agent made")
 model.learn(total_timesteps=config["timesteps"],
             )
+print("learning done")
 
