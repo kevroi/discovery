@@ -1,5 +1,5 @@
 env_name: 'MiniGrid-DoorKey-8x8-v0'
-project_name: 'PPO_on_MiniGrid'
+project_name: 'PPO_on_MiniGrid_sweep'
 timesteps: 1000000
 n_envs: 16
 policy_type: 'CnnPolicy'
