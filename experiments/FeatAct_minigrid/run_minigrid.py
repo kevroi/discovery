@@ -75,7 +75,7 @@ def main(args):
     
     print(f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features.")
     model.learn(total_timesteps=hparam_yaml["timesteps"])
-    model.save(f'experiments/FeatAct_minigrid/models/ppo_{hparam_yaml["env_name"]}')
+    model.save(f"experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}")
         
 
 if __name__ == '__main__':
