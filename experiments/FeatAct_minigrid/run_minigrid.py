@@ -5,7 +5,7 @@ import yaml
 from argparse import ArgumentParser
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, DQN
 import gymnasium as gym
 from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, FullyObsWrapper
 from cnn import MinigridFeaturesExtractor
@@ -59,14 +59,21 @@ def main(args):
     
     # Create agent
     policy_kwargs = dict(
-                    features_extractor_class=MinigridFeaturesExtractor,
-                    features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim']),
-                    )
-    model = PPO(hparam_yaml["policy_type"], env,
-            learning_rate=hparam_yaml["lr"],
-            policy_kwargs=policy_kwargs,
-            verbose=1, tensorboard_log=f"runs/{run_id}")
+                        features_extractor_class=MinigridFeaturesExtractor,
+                        features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim']),
+                        )
+    if hparam_yaml["learner"] == "PPO":
+        model = PPO(hparam_yaml["policy_type"], env,
+                learning_rate=hparam_yaml["lr"],
+                policy_kwargs=policy_kwargs,
+                verbose=1, tensorboard_log=f"runs/{run_id}")
+    elif hparam_yaml["learner"] == "DQN":
+        model = DQN(hparam_yaml["policy_type"], env,
+                learning_rate=hparam_yaml["lr"],
+                policy_kwargs=policy_kwargs,
+                verbose=1, tensorboard_log=f"runs/{run_id}")
     
+    print(f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features.")
     model.learn(total_timesteps=hparam_yaml["timesteps"])
     model.save(f'experiments/FeatAct_minigrid/models/ppo_{hparam_yaml["env_name"]}')
         
