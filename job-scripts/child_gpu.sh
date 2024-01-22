@@ -9,11 +9,11 @@
 #SBATCH --mail-type=ALL
 
 
-echo $ENV_NAME, $LR
+echo $LEARNER, $ENV_NAME, $LR
 
 module load python/3.9
 source venv/bin/activate
 wandb login
 
 # python $me/discovery/experiments/FeatAct_minigrid/run_minigrid.py --env_name=$ENV_NAME --lr=$LR --use_wandb
-python $me/discovery/experiments/FeatAct_atari/run_atari.py --env_name=$ENV_NAME --lr=$LR --use_wandb
+python $me/discovery/experiments/FeatAct_atari/run_atari.py --env_name=$ENV_NAME --learner=$LEARNER --lr=$LR --use_wandb

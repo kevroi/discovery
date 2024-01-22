@@ -10,11 +10,10 @@
 #SBATCH -o /home/roice/scratch/discovery/logs/%j.out
 #SBATCH -e /home/roice/scratch/discovery/logs/%j.err
 
-echo $ENV_NAME, $LR
+echo $LEARNER, $ENV_NAME, $LR
 
 module load python/3.9
 source venv/bin/activate
-pip list
 wandb login
 
-python $me/discovery/experiments/FeatAct_minigrid/run_minigrid.py --env_name=$ENV_NAME --lr=$LR --use_wandb
+python $me/discovery/experiments/FeatAct_minigrid/run_minigrid.py --env_name=$ENV_NAME --learner=$LEARNER --lr=$LR --use_wandb
