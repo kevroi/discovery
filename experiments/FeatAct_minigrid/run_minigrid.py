@@ -94,6 +94,12 @@ if __name__ == '__main__':
         help='Minigrid environment official name.'
     )
     parser.add_argument(
+        '--learner', 
+        type=str, 
+        default='PPO', 
+        help='Learning algorithm used.'
+    )
+    parser.add_argument(
         '--lr', 
         type=float, 
         default=3e-4, 
