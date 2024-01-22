@@ -1,9 +1,9 @@
-env_name: 'MiniGrid-DoorKey-8x8-v0'
+env_name: 'MiniGrid-DoorKey-5x5-v0'
 learner: 'DQN'
-project_name: 'DQN_on_MiniGrid_sweep'
+project_name: 'DQN_on_MiniGrid'
 timesteps: 1000000
-n_envs: 16
+n_envs: 1
 policy_type: 'CnnPolicy'
 lr: 0.0001
-feat_dim: 32
-record_video: False
+feat_dim: 8
+record_video: True
