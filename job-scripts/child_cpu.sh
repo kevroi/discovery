@@ -6,9 +6,7 @@
 #SBATCH --mem-per-cpu=8G
 #SBATCH --time=0-2:59
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=roice@ualberta.ca
-#SBATCH -o /home/roice/scratch/discovery/logs/%j.out
-#SBATCH -e /home/roice/scratch/discovery/logs/%j.err
+
 
 echo $LEARNER, $ENV_NAME, $LR
 
