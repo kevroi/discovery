@@ -8,7 +8,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 import gymnasium as gym
 from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, FullyObsWrapper
-from cnn import MinigridFeaturesExtractor
+from cnn import MinigridFeaturesExtractor, NatureCNN
 import wandb
 
 ## HELPER FUNCTIONS ##
@@ -58,10 +58,17 @@ def main(args):
                             )
     
     # Create agent
-    policy_kwargs = dict(
-                        features_extractor_class=MinigridFeaturesExtractor,
-                        features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim']),
-                        )
+    if hparam_yaml["cnn"] == "nature":
+        policy_kwargs = dict(
+                            features_extractor_class=NatureCNN,
+                            features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim']),
+                            )
+    elif hparam_yaml["cnn"] == "minigrid":
+        policy_kwargs = dict(
+                            features_extractor_class=MinigridFeaturesExtractor,
+                            features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim']),
+                            )
+    
     if hparam_yaml["learner"] == "PPO":
         model = PPO(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
@@ -104,6 +111,12 @@ if __name__ == '__main__':
         type=float, 
         default=3e-4, 
         help='Learning rate of the Adam optimizer used to optimise surrogate loss.'
+    )
+    parser.add_argument(
+        '--cnn', 
+        type=str, 
+        default='nature', # nature or minigrid 
+        help='CNN architecture used.'
     )
     parser.add_argument(
         '--use_wandb', 
