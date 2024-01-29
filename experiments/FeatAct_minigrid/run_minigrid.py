@@ -72,6 +72,9 @@ def main(args):
     if hparam_yaml["learner"] == "PPO":
         model = PPO(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
+                batch_size=hparam_yaml["batch_size"],
+                n_epochs=hparam_yaml["n_epochs"],
+                n_steps=hparam_yaml["n_steps"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
     elif hparam_yaml["learner"] == "DQN":
@@ -88,6 +91,7 @@ def main(args):
 if __name__ == '__main__':
 
     parser = ArgumentParser()
+    # The config file and things we want to sweep over (overwriting the config file)
     parser.add_argument(
         '--config_file', 
         type=str, 
