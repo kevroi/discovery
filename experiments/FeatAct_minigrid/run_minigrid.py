@@ -80,6 +80,10 @@ def main(args):
     elif hparam_yaml["learner"] == "DQN":
         model = DQN(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
+                batch_size=hparam_yaml["batch_size"],
+                learning_starts=hparam_yaml["learning_starts"],
+                train_freq=hparam_yaml["train_freq"],
+                exploration_final_eps=hparam_yaml["exploration_final_eps"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
     

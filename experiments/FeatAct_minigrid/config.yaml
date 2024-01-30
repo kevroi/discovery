@@ -8,10 +8,15 @@ feat_dim: 8
 record_video: True
 
 # Shared hypers
-lr: 0.0002
-batch_size: 256
+lr: 0.0002 # PPO_def: 3e-4
+batch_size: 96 # PPO_def: 64, DQN_def: 32
 
-# PPO hypers
-n_epochs: 4
-n_steps: 128
-n_envs: 16
+# PPO hypers & SB3 defaults
+n_epochs: 4 # 10
+n_steps: 128 # 2048
+n_envs: 16 # 1
+
+# (D)DQN hypers & SB3 defaults
+learning_starts: 1000 # 100
+train_freq: 1 # 4
+exploration_final_eps: 0.1 # 0.05
