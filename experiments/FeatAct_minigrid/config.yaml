@@ -1,7 +1,7 @@
 env_name: 'MiniGrid-DoorKey-5x5-v0'
 learner: 'DQN'
-project_name: 'DQN_on_MiniGrid'
-timesteps: 1000
+project_name: 'DQN_on_MiniGrid_sweep'
+timesteps: 500000
 policy_type: 'CnnPolicy'
 cnn: 'nature'
 feat_dim: 8
