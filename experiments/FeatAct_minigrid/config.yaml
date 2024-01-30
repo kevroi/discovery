@@ -20,3 +20,4 @@ n_envs: 16 # 1
 learning_starts: 1000 # 100
 train_freq: 1 # 4
 exploration_final_eps: 0.1 # 0.05
+target_update_interval: 500 # 10000
