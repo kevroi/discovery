@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
+from agents.ddqn import DoubleDQN
 import gymnasium as gym
 from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, FullyObsWrapper
 from cnn import MinigridFeaturesExtractor, NatureCNN
@@ -79,6 +80,16 @@ def main(args):
                 verbose=1, tensorboard_log=f"runs/{run_id}")
     elif hparam_yaml["learner"] == "DQN":
         model = DQN(hparam_yaml["policy_type"], env,
+                learning_rate=hparam_yaml["lr"],
+                batch_size=hparam_yaml["batch_size"],
+                learning_starts=hparam_yaml["learning_starts"],
+                train_freq=hparam_yaml["train_freq"],
+                exploration_final_eps=hparam_yaml["exploration_final_eps"],
+                target_update_interval=hparam_yaml["target_update_interval"],
+                policy_kwargs=policy_kwargs,
+                verbose=1, tensorboard_log=f"runs/{run_id}")
+    elif hparam_yaml["learner"] == "DDQN":
+        model = DoubleDQN(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
                 batch_size=hparam_yaml["batch_size"],
                 learning_starts=hparam_yaml["learning_starts"],
