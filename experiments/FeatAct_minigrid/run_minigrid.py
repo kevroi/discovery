@@ -108,6 +108,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     # The config file and things we want to sweep over (overwriting the config file)
+    # CAREFUL: These default args also overwrite the config file
     parser.add_argument(
         '--config_file', 
         type=str, 
@@ -131,12 +132,6 @@ if __name__ == '__main__':
         type=float, 
         default=3e-4, 
         help='Learning rate of the Adam optimizer used to optimise surrogate loss.'
-    )
-    parser.add_argument(
-        '--cnn', 
-        type=str, 
-        default='nature', # nature or minigrid 
-        help='CNN architecture used.'
     )
     parser.add_argument(
         '--use_wandb', 
