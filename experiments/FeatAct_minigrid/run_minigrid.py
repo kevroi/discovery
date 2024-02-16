@@ -3,23 +3,12 @@ import random
 import numpy as np
 import yaml
 from argparse import ArgumentParser
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 from agents.ddqn import DoubleDQN
-import gymnasium as gym
-from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, FullyObsWrapper
 from cnn import MinigridFeaturesExtractor, NatureCNN
 import wandb
-
-## HELPER FUNCTIONS ##
-def make_env(config):
-    env = gym.make(config['env_name'], render_mode='rgb_array')
-    env = RGBImgObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
-    env = ImgObsWrapper(env)
-    env = Monitor(env)
-    return env
-######################
+from utils import make_env
 
 def main(args):
     # Load YAML hyperparameters
@@ -102,6 +91,10 @@ def main(args):
     print(f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features.")
     model.learn(total_timesteps=hparam_yaml["timesteps"])
     model.save(f"experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}")
+
+    if hparam_yaml['analyse_rep']:
+        # Analyse the agent's representation
+        pass
         
 
 if __name__ == '__main__':
@@ -132,6 +125,11 @@ if __name__ == '__main__':
         type=float, 
         default=3e-4, 
         help='Learning rate of the Adam optimizer used to optimise surrogate loss.'
+    )
+    parser.add_argument(
+        '--analyse_rep', 
+        action='store_true', # set to false if we do not pass this argument
+        help='Raise the flag to analyse feature vector.'
     )
     parser.add_argument(
         '--use_wandb', 
