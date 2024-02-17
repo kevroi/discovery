@@ -70,8 +70,12 @@ def get_feats(model, config):
     with torch.no_grad():
         for obs in obs_list:
             obs = pre_process_obs(obs, model)
-            x = model.policy.extract_features(obs)/255
-            print(x.shape)
+            if model.__class__.__name__ == "DQN":
+                x = model.policy.extract_features(obs, model.policy.q_net.features_extractor)
+            elif model.__class__.__name__ == "PPO":
+                x = model.policy.extract_features(obs)/255
+            else:
+                raise ValueError(f"Feature extractor for {model.__class__.__name__} not implemented.")
             max_feat_list.append(torch.argmax(x).item())
             x_ = x.reshape(1, -1)
             feature_activations.append(x_)
