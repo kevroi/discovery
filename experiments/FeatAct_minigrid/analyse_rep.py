@@ -70,7 +70,7 @@ def get_feats(model, config):
     with torch.no_grad():
         for obs in obs_list:
             obs = pre_process_obs(obs, model)
-            if model.__class__.__name__ == "DQN":
+            if model.__class__.__name__ == "DoubleDQN":
                 x = model.policy.extract_features(obs, model.policy.q_net.features_extractor)
             elif model.__class__.__name__ == "PPO":
                 x = model.policy.extract_features(obs)/255
