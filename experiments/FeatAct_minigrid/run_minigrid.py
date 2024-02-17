@@ -102,6 +102,8 @@ def main(args):
 
 if __name__ == '__main__':
 
+    os.environ["WANDB__SERVICE_WAIT"] = "300" # Waiting time for wandb to start
+
     parser = ArgumentParser()
     # The config file and things we want to sweep over (overwriting the config file)
     # CAREFUL: These default args also overwrite the config file
