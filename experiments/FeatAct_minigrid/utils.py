@@ -1,6 +1,9 @@
+import numpy as np
+import torch
 import gymnasium as gym
 from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, FullyObsWrapper
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.utils import obs_as_tensor
 
 # HELPER FUNCTIONS ##
 def make_env(config):
@@ -9,4 +12,22 @@ def make_env(config):
     env = ImgObsWrapper(env)
     env = Monitor(env)
     return env
-#####################
+
+
+## HELPER FUNCTIONS ##
+def pre_process_obs(obs, model):
+    obs = np.transpose(obs, (0,3,1,2)) # bring colour channel to front
+    return obs_as_tensor(obs, model.policy.device)
+
+
+def extract_feature(agent, obs):
+    # assuming this function is used within a torch.no_grad() context
+    obs = pre_process_obs(obs, agent)
+    if agent.__class__.__name__ == "DoubleDQN":
+        x = agent.policy.extract_features(obs, agent.policy.q_net.features_extractor)
+    elif agent.__class__.__name__ == "PPO":
+        x = agent.policy.extract_features(obs)/255
+    else:
+        raise ValueError(f"Feature extraction for {agent.__class__.__name__} not implemented.")
+    x_ = x.reshape(1, -1)
+    return x_

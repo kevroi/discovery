@@ -1,16 +1,10 @@
 import numpy as np
 import torch
 import torchvision
-from stable_baselines3.common.utils import obs_as_tensor
 from stable_baselines3.common.vec_env import DummyVecEnv
-from utils import make_env
+from utils import make_env, extract_feature
 import matplotlib.pyplot as plt
 import wandb
-
-## HELPER FUNCTIONS ##
-def pre_process_obs(obs, model):
-    obs = np.transpose(obs, (0,3,1,2)) # bring colour channel to front
-    return obs_as_tensor(obs, model.policy.device)
 
 def get_obs(env, see_obs=False):
     print(env.get_attr("spec")[0].id)
@@ -69,19 +63,19 @@ def get_feats(model, config):
 
     with torch.no_grad():
         for obs in obs_list:
-            obs = pre_process_obs(obs, model)
-            if model.__class__.__name__ == "DoubleDQN":
-                x = model.policy.extract_features(obs, model.policy.q_net.features_extractor)
-            elif model.__class__.__name__ == "PPO":
-                x = model.policy.extract_features(obs)/255
-            else:
-                raise ValueError(f"Feature extractor for {model.__class__.__name__} not implemented.")
-            max_feat_list.append(torch.argmax(x).item())
-            x_ = x.reshape(1, -1)
-            feature_activations.append(x_)
+            phi = extract_feature(model, obs)
+            feature_activations.append(phi)
 
     feature_activations = torch.cat(feature_activations, dim=0)
-    images = wandb.Image(feature_activations, caption="Feature Activations")
-    wandb.log({"Feat_act": images})
+
+    if config['use_wandb']:
+        images = wandb.Image(feature_activations, caption="Feature Activations")
+        wandb.log({"Feat_act": images})
 
     return feature_activations, max_feat_list
+
+def see_feats(feature_activations):
+    plt.figure()
+    plt.imshow(feature_activations, cmap='hot', interpolation='nearest')
+    plt.colorbar()
+    plt.show()
