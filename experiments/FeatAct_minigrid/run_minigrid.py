@@ -94,7 +94,7 @@ def main(args):
 
     if hparam_yaml['analyse_rep']:
         # Analyse the agent's representation
-        from analyse_rep import get_feats, see_feats
+        from analyse_rep import get_feats
         feature_activations, _ = get_feats(model, hparam_yaml)
         print("got feat acts")
         # see_feats(feature_activations)
