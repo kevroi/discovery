@@ -1,8 +1,9 @@
 import numpy as np
 import torch
 import torchvision
+import zipfile
 from stable_baselines3.common.vec_env import DummyVecEnv
-from utils import make_env, extract_feature
+from utils import make_env, extract_feature, cosine_similarity, get_subgoal_index
 import matplotlib.pyplot as plt
 import wandb
 
@@ -58,7 +59,6 @@ def get_feats(model, config):
     env = DummyVecEnv([lambda: make_env(config=config)])
     env.seed(0)
     obs_list = get_obs(env, see_obs=True)
-    max_feat_list = []
     feature_activations = []
 
     with torch.no_grad():
@@ -66,16 +66,25 @@ def get_feats(model, config):
             phi = extract_feature(model, obs)
             feature_activations.append(phi)
 
-    feature_activations = torch.cat(feature_activations, dim=0)
+    feature_activations = np.concatenate(feature_activations, axis=0)
 
     if config['use_wandb']:
         images = wandb.Image(feature_activations, caption="Feature Activations")
         wandb.log({"Feat_act": images})
+        phi_subgoal = feature_activations[get_subgoal_index(config)]
+        for phi in feature_activations:
+            wandb.log({"Cosine Similarity with phi_subgoal": cosine_similarity(phi, phi_subgoal)})
 
-    return feature_activations, max_feat_list
+    return feature_activations
 
 def see_feats(feature_activations):
     plt.figure()
     plt.imshow(feature_activations, cmap='hot', interpolation='nearest')
     plt.colorbar()
     plt.show()
+
+def save_feats(feature_activations, config):
+    save_path  = f"experiments/FeatAct_minigrid/feat_acts/feature_activations"
+    np.save(save_path +f"_{config['env_name']}.npy", feature_activations.numpy()) # TODO: should add a timestamp/hash to the filename
+    with zipfile.ZipFile('array.zip', 'w') as zipf:
+        zipf.write('array.npy')

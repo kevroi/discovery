@@ -93,11 +93,8 @@ def main(args):
     model.save(f"experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}")
 
     if hparam_yaml['analyse_rep']:
-        # Analyse the agent's representation
-        from analyse_rep import get_feats, see_feats
-        feature_activations, _ = get_feats(model, hparam_yaml)
-        print("got feat acts")
-        see_feats(feature_activations)
+        from analyse_rep import get_feats
+        feature_activations = get_feats(model, hparam_yaml)
         
 
 if __name__ == '__main__':

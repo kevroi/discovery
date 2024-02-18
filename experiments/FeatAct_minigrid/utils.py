@@ -29,5 +29,24 @@ def extract_feature(agent, obs):
         x = agent.policy.extract_features(obs)/255
     else:
         raise ValueError(f"Feature extraction for {agent.__class__.__name__} not implemented.")
-    x_ = x.reshape(1, -1)
-    return x_
+    x = x.reshape(1, -1)
+    x = x / torch.norm(x, dim=1) # unit vector
+    x = x.detach().numpy()
+    return x
+
+
+def cosine_similarity(phi, phi_goal):
+    # assuming phi and phi_goal are unit vectors
+    return np.dot(phi, phi_goal)
+
+
+def get_subgoal_index(config):
+    """Along the optimal trajectory, this function returns the timestep of the subgoal.
+    This is the index of the observation in the feature_activation matrix.
+    """
+    if config['env_name'] == 'MiniGrid-DoorKey-5x5-v0':
+        subgoal_index = 5
+    else:
+        raise ValueError(f"Subgoal index not implemented for {config['env_name']}.")
+    
+    return subgoal_index
