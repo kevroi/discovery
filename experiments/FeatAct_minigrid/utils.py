@@ -30,7 +30,7 @@ def extract_feature(agent, obs):
     else:
         raise ValueError(f"Feature extraction for {agent.__class__.__name__} not implemented.")
     x = x.reshape(1, -1)
-    # x = x.cpu()
+    x = x.cpu()
     x = x / torch.norm(x, dim=1) # unit vector
     return x
 
