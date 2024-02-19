@@ -66,7 +66,7 @@ def get_feats(model, config):
             phi = extract_feature(model, obs)
             feature_activations.append(phi)
 
-    feature_activations = np.concatenate(feature_activations, axis=0)
+    feature_activations = torch.cat(feature_activations, dim=0)
 
     if config['use_wandb']:
         images = wandb.Image(feature_activations, caption="Feature Activations")

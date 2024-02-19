@@ -30,15 +30,14 @@ def extract_feature(agent, obs):
     else:
         raise ValueError(f"Feature extraction for {agent.__class__.__name__} not implemented.")
     x = x.reshape(1, -1)
-    x = x.cpu()
+    # x = x.cpu()
     x = x / torch.norm(x, dim=1) # unit vector
-    x = x.detach().numpy()
     return x
 
 
 def cosine_similarity(phi, phi_goal):
     # assuming phi and phi_goal are unit vectors
-    return np.dot(phi, phi_goal)
+    return torch.dot(phi, phi_goal)
 
 
 def get_subgoal_index(config):
