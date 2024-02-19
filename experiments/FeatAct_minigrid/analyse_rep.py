@@ -71,9 +71,10 @@ def get_feats(model, config):
     if config['use_wandb']:
         images = wandb.Image(feature_activations, caption="Feature Activations")
         wandb.log({"Feat_act": images})
-        phi_subgoal = feature_activations[get_subgoal_index(config)]
-        for phi in feature_activations:
-            wandb.log({"Cosine Similarity with phi_subgoal": cosine_similarity(phi, phi_subgoal)})
+        for i, index in enumerate(get_subgoal_index(config)):
+            phi_subgoal = feature_activations[index]
+            for phi in feature_activations:
+                wandb.log({f"Cosine Similarity with phi_subgoal_{i}": cosine_similarity(phi, phi_subgoal)})
 
     return feature_activations
 

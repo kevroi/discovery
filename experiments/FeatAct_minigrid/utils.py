@@ -45,8 +45,8 @@ def get_subgoal_index(config):
     This is the index of the observation in the feature_activation matrix.
     """
     if config['env_name'] == 'MiniGrid-DoorKey-5x5-v0':
-        subgoal_index = 5
+        subgoal_indices = [2, 6] # after pickuing up key, after opening door
     else:
         raise ValueError(f"Subgoal index not implemented for {config['env_name']}.")
     
-    return subgoal_index
+    return subgoal_indices
