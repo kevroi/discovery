@@ -1,9 +1,11 @@
+import os
 import numpy as np
 import torch
 import gymnasium as gym
 from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, FullyObsWrapper
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import obs_as_tensor
+import matplotlib.pyplot as plt
 
 # HELPER FUNCTIONS ##
 def make_env(config):
@@ -40,6 +42,17 @@ def cosine_similarity(phi, phi_goal):
     return torch.dot(phi, phi_goal)
 
 
+def cosine_similarity_matrix(feature_activations):
+    # assuming feature_activations is a tensor of unit vectors
+    return torch.mm(feature_activations, feature_activations.T)
+
+def see_cosine_similarity_matrix(file_path):
+    cos_sim_matrix = np.load(file_path)
+    plt.imshow(cos_sim_matrix)
+    plt.colorbar()
+    plt.show()
+
+
 def get_subgoal_index(config):
     """Along the optimal trajectory, this function returns the timestep of the subgoal.
     This is the index of the observation in the feature_activation matrix.
@@ -50,3 +63,20 @@ def get_subgoal_index(config):
         raise ValueError(f"Subgoal index not implemented for {config['env_name']}.")
     
     return subgoal_indices
+
+
+def check_and_clean_directory(directory):
+    if os.path.exists(directory):
+        # Directory exists, so empty it
+        for filename in os.listdir(directory):
+            file_path = os.path.join(directory, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                elif os.path.isdir(file_path):
+                    os.rmdir(file_path)
+            except Exception as e:
+                print(f"Failed to delete {file_path}: {e}")
+    else:
+        # Directory does not exist, so create it
+        os.makedirs(directory)

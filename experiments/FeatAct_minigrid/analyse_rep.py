@@ -3,7 +3,7 @@ import torch
 import torchvision
 import zipfile
 from stable_baselines3.common.vec_env import DummyVecEnv
-from utils import make_env, extract_feature, cosine_similarity, get_subgoal_index
+from utils import make_env, extract_feature, cosine_similarity_matrix, get_subgoal_index, check_and_clean_directory, see_cosine_similarity_matrix
 import matplotlib.pyplot as plt
 import wandb
 
@@ -67,14 +67,21 @@ def get_feats(model, config):
             feature_activations.append(phi)
 
     feature_activations = torch.cat(feature_activations, dim=0)
+    cos_sim_matrix = cosine_similarity_matrix(feature_activations)
 
     if config['use_wandb']:
         images = wandb.Image(feature_activations, caption="Feature Activations")
         wandb.log({"Feat_act": images})
         for i, index in enumerate(get_subgoal_index(config)):
             phi_subgoal = feature_activations[index]
-            for phi in feature_activations:
-                wandb.log({f"Cosine Similarity with phi_subgoal_{i}": cosine_similarity(phi, phi_subgoal)})
+            for j, phi in enumerate(feature_activations):
+                wandb.log({f"Cosine Similarity with phi_subgoal_{i}": cos_sim_matrix[index, j]})
+
+    # save the cosine similarity matrix
+    save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices"
+    check_and_clean_directory(save_path)
+    np.save(save_path +f"/{config['learner']}_{config['env_name']}_{str(config['run_num'])}.npy", cos_sim_matrix.numpy())
+    see_cosine_similarity_matrix(save_path +f"/{config['learner']}_{config['env_name']}_{str(config['run_num'])}.npy")
 
     return feature_activations
 

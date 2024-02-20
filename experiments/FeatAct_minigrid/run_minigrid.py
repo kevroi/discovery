@@ -129,6 +129,12 @@ if __name__ == '__main__':
         help='Learning rate of the Adam optimizer used to optimise surrogate loss.'
     )
     parser.add_argument(
+        '--run_num', 
+        type=int,
+        default=-1,
+        help='Number of the run for multirun experiments.'
+    )
+    parser.add_argument(
         '--analyse_rep', 
         action='store_true', # set to false if we do not pass this argument
         help='Raise the flag to analyse feature vector.'

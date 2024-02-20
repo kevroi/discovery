@@ -11,7 +11,7 @@
 #SBATCH -e /home/roice/scratch/discovery/logs/%x.err
 
 # These overwrite config.yaml
-learner="DQN"
+learner="PPO"
 env_name='MiniGrid-DoorKey-5x5-v0' 
 lrs=(0.0003)
 num_runs=1
@@ -20,7 +20,7 @@ num_runs=1
 for lr in ${lrs[@]}; do
     for i in $(seq 1 $num_runs); do
         # Submit a job for each parameter combination
-        sbatch --job-name="${learner}_${env_name}_${lr}_run_${i}" --export=LEARNER="$learner",ENV_NAME="$env_name",LR="$lr" job-scripts/child_gpu.sh
+        sbatch --job-name="${learner}_${env_name}_${lr}_run_${i}" --export=LEARNER="$learner",ENV_NAME="$env_name",LR="$lr",RUN="$i" job-scripts/child_gpu.sh
 
         srun sleep 2
     done
