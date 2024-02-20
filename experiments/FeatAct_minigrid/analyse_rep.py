@@ -3,7 +3,7 @@ import torch
 import torchvision
 import zipfile
 from stable_baselines3.common.vec_env import DummyVecEnv
-from utils import make_env, extract_feature, cosine_similarity_matrix, get_subgoal_index, check_and_clean_directory, see_cosine_similarity_matrix
+from utils import make_env, extract_feature, cosine_similarity_matrix, get_subgoal_index, check_directory, see_cosine_similarity_matrix
 import matplotlib.pyplot as plt
 import wandb
 
@@ -81,7 +81,7 @@ def get_feats(model, config):
 
     # save the cosine similarity matrix
     save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices"
-    check_and_clean_directory(save_path)
+    check_directory(save_path)
     np.save(save_path +f"/{config['learner']}_{config['env_name']}_{str(config['run_num'])}.npy", cos_sim_matrix.numpy())
     see_cosine_similarity_matrix(save_path +f"/{config['learner']}_{config['env_name']}_{str(config['run_num'])}.npy")
 

@@ -65,18 +65,8 @@ def get_subgoal_index(config):
     return subgoal_indices
 
 
-def check_and_clean_directory(directory):
+def check_directory(directory):
     if os.path.exists(directory):
-        # Directory exists, so empty it
-        for filename in os.listdir(directory):
-            file_path = os.path.join(directory, filename)
-            try:
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-                elif os.path.isdir(file_path):
-                    os.rmdir(file_path)
-            except Exception as e:
-                print(f"Failed to delete {file_path}: {e}")
+        pass
     else:
-        # Directory does not exist, so create it
         os.makedirs(directory)
