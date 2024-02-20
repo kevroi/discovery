@@ -76,6 +76,8 @@ def get_feats(model, config):
             phi_subgoal = feature_activations[index]
             for j, phi in enumerate(feature_activations):
                 wandb.log({f"Cosine Similarity with phi_subgoal_{i}": cos_sim_matrix[index, j]})
+        labels = [f"phi(o_{i})" for i in range(len(obs_list))]
+        wandb.log({"CosSim": wandb.plots.HeatMap(labels, labels, cos_sim_matrix, show_text=False)})
 
     # save the cosine similarity matrix
     save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices"
