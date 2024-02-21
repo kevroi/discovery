@@ -33,6 +33,7 @@ def extract_feature(agent, obs):
         raise ValueError(f"Feature extraction for {agent.__class__.__name__} not implemented.")
     x = x.reshape(1, -1)
     x = x.cpu()
+    x = x + 1e-8 # add epsilon to avoid division by zero
     x = x / torch.norm(x, dim=1) # unit vector
     return x
 
@@ -46,9 +47,26 @@ def cosine_similarity_matrix(feature_activations):
     # assuming feature_activations is a tensor of unit vectors
     return torch.mm(feature_activations, feature_activations.T)
 
-def see_cosine_similarity_matrix(file_path):
-    cos_sim_matrix = np.load(file_path)
-    plt.imshow(cos_sim_matrix)
+def plot_average_heatmap(agent_name, env_name, folder_path):
+    # Initialize variables to store the sum of matrices and the count of matrices
+    sum_matrix = None
+    count = 0
+
+    # Iterate over the files in the folder
+    for filename in os.listdir(folder_path):
+        if filename.startswith(agent_name) and filename.endswith(".npy"):
+            matrix_data = np.load(os.path.join(folder_path, filename))
+            # matrix_data = np.nan_to_num(matrix_data, nan=0.0) # replace NaN with 0
+            if sum_matrix is None:
+                sum_matrix = matrix_data
+            else:
+                sum_matrix += matrix_data
+            count += 1
+    average_matrix = sum_matrix / count
+
+    plt.figure(figsize=(10, 8))
+    plt.imshow(average_matrix, cmap='viridis', interpolation='nearest')
+    plt.title(f'Average Heatmap of {agent_name} on {env_name}')
     plt.colorbar()
     plt.show()
 
