@@ -123,6 +123,12 @@ if __name__ == '__main__':
         help='Learning algorithm used.'
     )
     parser.add_argument(
+        '--feat_dim', 
+        type=int, 
+        default=128, 
+        help='Dimension of feature space.'
+    )
+    parser.add_argument(
         '--lr', 
         type=float, 
         default=3e-4, 
