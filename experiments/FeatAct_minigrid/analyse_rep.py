@@ -3,7 +3,7 @@ import torch
 import torchvision
 import zipfile
 from stable_baselines3.common.vec_env import DummyVecEnv
-from utils import make_env, extract_feature, cosine_similarity_matrix, get_subgoal_index, check_directory, see_cosine_similarity_matrix
+from utils import *
 import matplotlib.pyplot as plt
 import wandb
 
