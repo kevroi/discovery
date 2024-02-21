@@ -82,7 +82,7 @@ def get_feats(model, config):
     # save the cosine similarity matrix
     save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices"
     check_directory(save_path)
-    np.save(save_path +f"/{config['learner']}_{config['env_name']}_{str(config['run_num'])}.npy", cos_sim_matrix.numpy())
+    np.save(save_path +f"/{config['learner']}_{config['env_name']}_{config['feat_dim']}feats_{str(config['run_num'])}.npy", cos_sim_matrix.numpy())
 
     return feature_activations
 
