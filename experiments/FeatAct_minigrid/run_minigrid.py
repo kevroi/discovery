@@ -8,6 +8,7 @@ from stable_baselines3 import PPO, DQN
 from agents.ddqn import DoubleDQN
 from cnn import MinigridFeaturesExtractor, NatureCNN
 import wandb
+from activations import *
 from utils import make_env
 
 def main(args):
@@ -48,15 +49,22 @@ def main(args):
                             )
     
     # Create agent
+    if hparam_yaml["activation"] == "crelu" and hparam_yaml["feat_dim"] % 2 != 0:
+        raise ValueError("CReLU activation requires even number of features.")
+    if hparam_yaml["activation"] == "fta" and hparam_yaml["feat_dim"] % 20 != 0:
+        raise ValueError("FTA activation requires number of features to be a multiple of 20.")
+        
     if hparam_yaml["cnn"] == "nature":
         policy_kwargs = dict(
                             features_extractor_class=NatureCNN,
-                            features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim']),
+                            features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim'],
+                                                           last_layer_activation=hparam_yaml["activation"]),
                             )
     elif hparam_yaml["cnn"] == "minigrid":
         policy_kwargs = dict(
                             features_extractor_class=MinigridFeaturesExtractor,
-                            features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim']),
+                            features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim'],
+                                                            last_layer_activation=hparam_yaml["activation"]),
                             )
     
     if hparam_yaml["learner"] == "PPO":

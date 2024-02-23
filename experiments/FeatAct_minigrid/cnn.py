@@ -7,9 +7,12 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.preprocessing import is_image_space
 
+from activations import CReLU, FTA
+
 # CNN from MiniGrid Documentation
 class MinigridFeaturesExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space: gym.Space, features_dim: int = 512, normalized_image: bool = False) -> None:
+    def __init__(self, observation_space: gym.Space, features_dim: int = 512,
+                 normalized_image: bool = False, last_layer_activation="relu") -> None:
         super().__init__(observation_space, features_dim)
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
@@ -26,7 +29,12 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
         with torch.no_grad():
             n_flatten = self.cnn(torch.as_tensor(observation_space.sample()[None]).float()).shape[1]
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        if last_layer_activation == "relu":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        elif last_layer_activation == "crelu":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//2), CReLU())
+        elif last_layer_activation == "fta":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//20), FTA())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
@@ -53,6 +61,7 @@ class NatureCNN(BaseFeaturesExtractor):
         observation_space: gym.Space,
         features_dim: int = 512,
         normalized_image: bool = False,
+        last_layer_activation="relu",
     ) -> None:
         assert isinstance(observation_space, spaces.Box), (
             "NatureCNN must be used with a gym.spaces.Box ",
@@ -87,7 +96,12 @@ class NatureCNN(BaseFeaturesExtractor):
         with torch.no_grad():
             n_flatten = self.cnn(torch.as_tensor(observation_space.sample()[None]).float()).shape[1]
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        if last_layer_activation == "relu":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        elif last_layer_activation == "crelu":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//2), CReLU())
+        elif last_layer_activation == "fta":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//20), FTA())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
