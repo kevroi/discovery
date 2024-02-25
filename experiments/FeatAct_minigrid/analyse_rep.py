@@ -49,16 +49,26 @@ def get_obs(env, see_obs=False):
         # plt.imshow(np.concatenate([img], 1)) # shows the full environment
         # plt.savefig("../../plots/domains/DoorKey_5x5.pdf", dpi=300)
     
+    if env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-8x8-v0':
+        obs_list = []
+        obs = env.reset()
+        action_seq = [2, 0, 3, 2, 0, 2, 2, 2, 1, 5, 2, 2, 1, 2, 2, 2]
+        for a in action_seq:
+            obs, _, _, _ = env.step([a])
+            obs_list.append(obs)
     else:
         raise ValueError(f"Analysis not implemented for {env.get_attr('spec')[0].id}.")
     
     return obs_list
 
 
-def get_feats(model, config):
+def get_feats(model, config, see_bad_obs=False):
     env = DummyVecEnv([lambda: make_env(config=config)])
     env.seed(0)
-    obs_list = get_obs(env, see_obs=True)
+    if see_bad_obs:
+        obs_list = get_bad_obs(env)
+    else:
+        obs_list = get_obs(env, see_obs=True)
     feature_activations = []
 
     with torch.no_grad():
