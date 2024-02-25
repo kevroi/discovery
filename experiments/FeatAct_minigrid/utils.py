@@ -211,6 +211,8 @@ def get_subgoal_index(config):
     """
     if config['env_name'] == 'MiniGrid-DoorKey-5x5-v0':
         subgoal_indices = [2, 6] # after pickuing up key, after opening door
+    elif config['env_name'] == 'MiniGrid-DoorKey-8x8-v0':
+        subgoal_indices = [3, 10] # after pickuing up key, after opening door
     else:
         raise ValueError(f"Subgoal index not implemented for {config['env_name']}.")
     
