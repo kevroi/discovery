@@ -103,6 +103,7 @@ def main(args):
     if hparam_yaml['analyse_rep']:
         from analyse_rep import get_feats
         feature_activations = get_feats(model, hparam_yaml)
+        # feature_activations = get_feats(model, hparam_yaml, see_bad_obs=True) # Uncomment to analyse bad observations too
         
 
 if __name__ == '__main__':
