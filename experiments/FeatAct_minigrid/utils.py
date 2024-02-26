@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # HELPER FUNCTIONS ##
 def make_env(config):
     if config['env_name'] == "FourRoomChainEnv":
-        from n_room_env import FourRoomChainEnv, TransposeObservation
+        from n_room_env import FourRoomChainEnv
         gym.register(id="FourRoomChainEnv", entry_point=FourRoomChainEnv)
         env = gym.make(config['env_name'], render_mode='rgb_array')
         env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
