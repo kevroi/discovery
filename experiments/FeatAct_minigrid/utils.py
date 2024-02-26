@@ -9,9 +9,16 @@ import matplotlib.pyplot as plt
 
 # HELPER FUNCTIONS ##
 def make_env(config):
-    env = gym.make(config['env_name'], render_mode='rgb_array')
-    env = RGBImgObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
-    env = ImgObsWrapper(env)
+    if config['env_name'] == "FourRoomChainEnv":
+        from n_room_env import FourRoomChainEnv, TransposeObservation
+        gym.register(id="FourRoomChainEnv", entry_point=FourRoomChainEnv)
+        env = gym.make(config['env_name'], render_mode='rgb_array')
+        env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
+        env = ImgObsWrapper(env)
+    else:
+        env = gym.make(config['env_name'])
+        env = RGBImgObsWrapper(env)
+        env = ImgObsWrapper(env)
     env = Monitor(env)
     return env
 
@@ -225,8 +232,8 @@ def check_directory(directory):
     else:
         os.makedirs(directory)
 
-# if __name__=="__main__":
-#     plot_average_heatmap("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices",
-#                          feat_dim=640, plot_sg_cossim=False, activation="fta")
-#     # plot_sg_cossim("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices", feat_dims=[8, 32])
-#     # plot_sg_cossim_diff_act("PPO", "MiniGrid-DoorKey-5x5-v0", ["experiments/FeatAct_minigrid/cos_sim_matrices", "experiments/FeatAct_minigrid/cos_sim_matrices_fta"], feat_dims=[8, 32])
+if __name__=="__main__":
+    plot_average_heatmap("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices",
+                         feat_dim=128, plot_sg_cossim=False, activation="relu")
+    # plot_sg_cossim("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices", feat_dims=[8, 32])
+    # plot_sg_cossim_diff_act("PPO", "MiniGrid-DoorKey-5x5-v0", ["experiments/FeatAct_minigrid/cos_sim_matrices", "experiments/FeatAct_minigrid/cos_sim_matrices_fta"], feat_dims=[8, 32])
