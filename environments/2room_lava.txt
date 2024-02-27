@@ -1,6 +1,6 @@
-SLLLL_X______
 _LLLL_X______
-_LLLL________
+_LLLL_X______
+SLLLL________
 _LLLL_X______
 _LLLL_X______
 _LLLL_X______

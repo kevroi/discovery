@@ -140,6 +140,44 @@ class QAgent(object):
         print("Invalid agent message: " + in_message)
         exit()
 
+class QAgent_phi(QAgent):
+    def __init__(self, max_row, max_col, phi_sg):
+        super().__init__(max_row, max_col)
+        self.phi_sg = phi_sg # all the states aggreated along with the subgoal
+    
+    def step(self, reward, state):
+        """
+        Arguments: reward: floting point, state: integer
+        Returns: action: list with two integers [row, col]
+        """
+        current_state = self.states_rc[state[0]]
+
+        if current_state in self.phi_sg:
+            current_state = self.phi_sg[1]
+
+        # crow: row of current state
+        crow = current_state[0]
+        # ccol: col of current state
+        ccol = current_state[1]
+
+        # Getting the coordinates of the last state
+        lrow, lcol = self.states_rc[self.last_state]
+        # la: integer representation of last action
+        la = self.last_action
+
+        # Update Q value
+        target = reward + (self.discount)*(self.Q[crow][ccol].max())
+        # Update: New Estimate = Old Estimate + StepSize[Target - Old Estimate]
+        self.Q[lrow][lcol][la] += self.alpha*(target - self.Q[lrow][lcol][la])
+
+        # Choose action
+        ca = self.epsilongreedy(crow,ccol)
+        action = self.action_set[ca]
+        self.last_state = self.states_rc.index(current_state)
+        self.last_action = ca
+        self.steps += 1
+        return self.last_action
+
 
 class OptionExploreQAgent(object):
 
