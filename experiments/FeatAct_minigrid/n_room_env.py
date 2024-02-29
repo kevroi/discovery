@@ -22,14 +22,17 @@ class TwoRoomEnv(MiniGridEnv):
         agent_start_pos=(1, 1),
         agent_start_dir=0,
         hallway_pos=(3,7),
+        random_hallway=False,
         max_steps: int = None,
         **kwargs,
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
         self.hallway_pos = hallway_pos
+        self.random_hallway = random_hallway
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
+        random.seed(0) # seed for hallway positions
 
         super().__init__(
             mission_space=mission_space,
@@ -52,16 +55,16 @@ class TwoRoomEnv(MiniGridEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
 
+        # Randomly place hallway
+        if self.random_hallway:
+            self.hallway_pos = (random.randint(1, height-2), self.hallway_pos[1])
+
         # Generate verical separation wall
         for i in range(0, self.hallway_pos[0]):
             self.grid.set(self.hallway_pos[1], i, Wall())
 
         for i in range(self.hallway_pos[0]+1, height):
             self.grid.set(self.hallway_pos[1], i, Wall())
-        
-        # Place the door and key
-        # self.grid.set(5, 6, Door(COLOR_NAMES[0], is_locked=True))
-        # self.grid.set(3, 6, Key(COLOR_NAMES[0]))
 
         # Place a goal square in the bottom-right corner
         self.put_obj(Goal(), width - 5, height - 2)
@@ -310,7 +313,39 @@ class SixRoomChainEnv(MiniGridEnv):
         self.mission = "6-room-chain"
 
 def main():
-    env = FourRoomChainEnv(render_mode="human", random_goal=True)
+    # gym.register(id="FourRoomChainEnv", entry_point=FourRoomChainEnv)
+    # # env = FourRoomChainEnv(render_mode="human", random_goal=True)
+    # def make_env(config):
+    #     env = gym.make(config['env_name'], render_mode='rgb_array')
+    #     env = RGBImgObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
+    #     env = ImgObsWrapper(env)
+    #     env = Monitor(env)
+    #     # wrappers = [
+    #     #     lambda env: RGBImgObsWrapper(env),
+    #     #     lambda env: ImgObsWrapper(env),
+    #     #     # lambda env: Monitor(env),
+    #     # ]
+    #     # env = gym.make(config['env_name'], render_mode='rgb_array')
+    #     # for wrapper in wrappers:
+    #     #     env = wrapper(env)
+    #     return env
+    # conf = dict(env_name="FourRoomChainEnv",
+    #             n_envs=1,
+    #             seed=42,
+    #             )
+    # # env = DummyVecEnv([lambda: make_env(config=conf)]*conf['n_envs'])
+    # env = make_env(config=conf)
+    # # from stable_baselines3.common.vec_env.patch_gym import _patch_env
+    # # envs = [fn() for fn in [lambda: make_env(config=conf)]*5]
+    # obs, _ = env.reset()
+    # # print(obs.shape)
+    # print(env.observation_space)
+
+    # # # enable manual control for testing
+    # # manual_control = ManualControl(env, seed=42)
+    # # manual_control.start()
+
+    env = TwoRoomEnv(render_mode="human", random_hallway=True)
 
     # enable manual control for testing
     manual_control = ManualControl(env, seed=42)

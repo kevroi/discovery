@@ -1,10 +1,10 @@
 env_name: 'MiniGrid-DoorKey-5x5-v0'
-learner: 'DDQN'
+learner: 'PPO'
 project_name: 'testing_feature_logging'
-timesteps: 10000
+timesteps: 500000
 policy_type: 'CnnPolicy'
-cnn: 'nature'
-activation: 'fta'
+cnn: 'minigrid'
+activation: 'relu'
 feat_dim: 128
 record_video: False
 
@@ -22,3 +22,6 @@ learning_starts: 1000 # 100
 train_freq: 1 # 4
 exploration_final_eps: 0.1 # 0.05
 target_update_interval: 500 # 10000
+
+# Env specific hypers
+random_hallway: False # TwoRoomEnv

@@ -15,6 +15,12 @@ def make_env(config):
         env = gym.make(config['env_name'], render_mode='rgb_array')
         env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
         env = ImgObsWrapper(env)
+    elif config['env_name'] == "TwoRoomEnv":
+        from n_room_env import TwoRoomEnv
+        gym.register(id="TwoRoomEnv", entry_point=TwoRoomEnv)
+        env = gym.make(config['env_name'], render_mode='rgb_array', random_hallway=config['random_hallway'])
+        env = FullyObsWrapper(env)
+        env = ImgObsWrapper(env)
     else:
         env = gym.make(config['env_name'])
         env = RGBImgObsWrapper(env)

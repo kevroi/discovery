@@ -39,6 +39,9 @@ def main(args):
         run_id = 'debug'
     
     # Create environment
+    if hparam_yaml["env_name"] == "TwoRoomEnv" and hparam_yaml["cnn"] == "nature":
+        raise ValueError("TwoRoomEnv does not support NatureCNN. Use MinigridFeaturesExtractor instead.")
+    
     env = DummyVecEnv([lambda: make_env(config=hparam_yaml)]*hparam_yaml['n_envs'])
     if hparam_yaml['record_video']:
         env = VecVideoRecorder(
