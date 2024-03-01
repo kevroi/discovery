@@ -9,9 +9,22 @@ import matplotlib.pyplot as plt
 
 # HELPER FUNCTIONS ##
 def make_env(config):
-    env = gym.make(config['env_name'], render_mode='rgb_array')
-    env = RGBImgObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
-    env = ImgObsWrapper(env)
+    if config['env_name'] == "FourRoomChainEnv":
+        from n_room_env import FourRoomChainEnv
+        gym.register(id="FourRoomChainEnv", entry_point=FourRoomChainEnv)
+        env = gym.make(config['env_name'], render_mode='rgb_array')
+        env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
+        env = ImgObsWrapper(env)
+    elif config['env_name'] == "TwoRoomEnv":
+        from n_room_env import TwoRoomEnv
+        gym.register(id="TwoRoomEnv", entry_point=TwoRoomEnv)
+        env = gym.make(config['env_name'], render_mode='rgb_array', random_hallway=config['random_hallway'])
+        env = FullyObsWrapper(env)
+        env = ImgObsWrapper(env)
+    else:
+        env = gym.make(config['env_name'])
+        env = RGBImgObsWrapper(env)
+        env = ImgObsWrapper(env)
     env = Monitor(env)
     return env
 
@@ -73,7 +86,7 @@ def plot_average_heatmap(agent_name, env_name, folder_path, plot_sg_cossim=False
     cbar = plt.colorbar()
     cbar.ax.set_yticklabels(cbar.ax.get_yticklabels(), fontsize=18)
     # plt.show()
-    plt.savefig(f"plots/feature_activations/minigrid_doorkey_5x5/cossim_{agent_name}_{env_name}_{feat_dim}feats.pdf")
+    plt.savefig(f"plots/feature_activations/minigrid_doorkey_5x5/cossim_{agent_name}_{env_name}_{feat_dim}feats_{activation}.pdf")
 
     if plot_sg_cossim:
         # iterate over files again to get the std error
@@ -202,6 +215,55 @@ def plot_sg_cossim_diff_act(agent_name, env_name, folder_paths, feat_dims=[12]):
             plt.show()
             plt.close()
 
+def plot_sg_cossim_diff_feats(agent_name, env_name, folder_path, feat_dims=[8, 32]):
+    subgoal_indices = get_subgoal_index({'env_name': env_name})
+    for i, index in enumerate(subgoal_indices):
+        plt.figure()
+        plt.gca().spines['top'].set_visible(False)
+        plt.gca().spines['right'].set_visible(False)
+        plt.gca().spines['bottom'].set_visible(True)
+        plt.gca().spines['left'].set_visible(True)
+        plt.ylim(0.0, 1)
+        # plt.title(f'Cosine Similarity with subgoal {i}')
+        plt.xlabel('Timestep')
+        plt.ylabel('Cosine Similarity')
+        for feat_dim in feat_dims:
+            # Initialize variables to store the sum of matrices and the count of matrices
+            sum_matrix = None
+            std_error_matrix = None
+            count = 0
+
+            #Iterate over the files in the folder
+            for filename in os.listdir(folder_path):
+                if filename.startswith(f"{agent_name}_{env_name}_{feat_dim}") and filename.endswith(".npy"):
+                    matrix_data = np.load(os.path.join(folder_path, filename))
+                    if sum_matrix is None:
+                        sum_matrix = matrix_data
+                    else:
+                        sum_matrix += matrix_data
+                    count += 1
+            average_matrix = sum_matrix / count
+
+            # Iterate over the files in the folder
+            for filename in os.listdir(folder_path):
+                if filename.startswith(f"{agent_name}_{env_name}_{feat_dim}") and filename.endswith(".npy"):
+                    matrix_data = np.load(os.path.join(folder_path, filename))
+                    if std_error_matrix is None:
+                        std_error_matrix = (matrix_data - average_matrix)**2
+                    else:
+                        std_error_matrix += (matrix_data - average_matrix)**2
+                    count += 1
+            std_error_matrix = np.sqrt(std_error_matrix / count)
+
+            plt.plot(average_matrix[index, :], label=f"{feat_dim} features")
+            plt.fill_between(range(average_matrix.shape[0]),
+                                np.maximum(average_matrix[index, :] - std_error_matrix[index, :], np.zeros(average_matrix.shape[0])),
+                                np.minimum(average_matrix[index, :] + std_error_matrix[index, :], np.ones(average_matrix.shape[0])),
+                                alpha=0.3)
+        plt.legend()
+        plt.show()
+        plt.close()
+
 
 
 
@@ -225,8 +287,9 @@ def check_directory(directory):
     else:
         os.makedirs(directory)
 
-# if __name__=="__main__":
-#     plot_average_heatmap("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices",
-#                          feat_dim=640, plot_sg_cossim=False, activation="fta")
-#     # plot_sg_cossim("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices", feat_dims=[8, 32])
-#     # plot_sg_cossim_diff_act("PPO", "MiniGrid-DoorKey-5x5-v0", ["experiments/FeatAct_minigrid/cos_sim_matrices", "experiments/FeatAct_minigrid/cos_sim_matrices_fta"], feat_dims=[8, 32])
+if __name__=="__main__":
+    plot_average_heatmap("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices",
+                         feat_dim=256, plot_sg_cossim=False, activation="crelu")
+    # plot_sg_cossim("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices", feat_dims=[8, 32])
+    # plot_sg_cossim_diff_act("PPO", "MiniGrid-DoorKey-5x5-v0", ["experiments/FeatAct_minigrid/cos_sim_matrices_relu", "experiments/FeatAct_minigrid/cos_sim_matrices_fta"], feat_dims=[8, 32])
+    # plot_sg_cossim_diff_feats("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices_relu", feat_dims=[2, 16, 128])

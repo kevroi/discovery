@@ -77,11 +77,14 @@ class RLGlue(object):
 
         return is_terminal
 
-    def cleanup(self):
+    # These two functions replace the old cleanup() function
+    def cleanup_episode(self):
+        self.environment.cleanup()
+        self.total_reward = 0.0
 
+    def cleanup_run(self):
         self.environment.cleanup()
         self.agent.cleanup()
-
         self.total_reward = 0.0
         self.num_steps = 0
         self.num_episodes = 0
