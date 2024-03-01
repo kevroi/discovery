@@ -90,7 +90,7 @@ def get_feats(model, config, see_bad_obs=False):
         wandb.log({"CosSim": wandb.plots.HeatMap(labels, labels, cos_sim_matrix, show_text=False)})
 
     # save the cosine similarity matrix
-    save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices"
+    save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices_{config['activation']}"
     check_directory(save_path)
     np.save(save_path +f"/{config['learner']}_{config['env_name']}_{config['feat_dim']}feats_{str(config['run_num'])}.npy", cos_sim_matrix.numpy())
 
