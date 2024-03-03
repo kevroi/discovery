@@ -74,6 +74,7 @@ def main(args):
     if hparam_yaml["learner"] == "PPO":
         model = PPO(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
+                gamma=hparam_yaml["gamma"],
                 batch_size=hparam_yaml["batch_size"],
                 n_epochs=hparam_yaml["n_epochs"],
                 n_steps=hparam_yaml["n_steps"],
@@ -82,6 +83,7 @@ def main(args):
     elif hparam_yaml["learner"] == "DQN":
         model = DQN(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
+                gamma=hparam_yaml["gamma"],
                 batch_size=hparam_yaml["batch_size"],
                 learning_starts=hparam_yaml["learning_starts"],
                 train_freq=hparam_yaml["train_freq"],
@@ -92,6 +94,7 @@ def main(args):
     elif hparam_yaml["learner"] == "DDQN":
         model = DoubleDQN(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
+                gamma=hparam_yaml["gamma"],
                 batch_size=hparam_yaml["batch_size"],
                 learning_starts=hparam_yaml["learning_starts"],
                 train_freq=hparam_yaml["train_freq"],

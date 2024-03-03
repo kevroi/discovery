@@ -10,6 +10,7 @@ record_video: False
 
 # Shared hypers
 lr: 0.0002 # PPO_def: 3e-4
+gamma: 0.99 # PPO_def: 0.99
 batch_size: 96 # PPO_def: 64, DQN_def: 32
 
 # PPO hypers & SB3 defaults
