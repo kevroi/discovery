@@ -34,6 +34,7 @@ def main(args):
             save_code=True,
             )
         run_id = run.id
+        wandb.run.log_code("./experiments/FeatAct_minigrid/")
     else:
         run = None
         run_id = 'debug'
