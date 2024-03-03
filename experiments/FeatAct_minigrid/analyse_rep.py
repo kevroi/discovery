@@ -61,6 +61,24 @@ def get_obs(env, see_obs=False):
     
     return obs_list
 
+def get_bad_obs(env):
+    if env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-5x5-v0':
+        obs_list = []
+        obs = env.reset()
+        obs_list.append(obs)
+
+        action_seq = [1, 3, 2, 2, 1, 5, 2, 2, 1, 2,
+                        1, 1, 2, 0, 2, 2, 0, 2, 2]
+        
+        # # move to the hallway
+        for a in action_seq:
+            obs, _, _, _ = env.step([a])
+            obs_list.append(obs)
+    else:
+        raise ValueError(f"Analysis not implemented for {env.get_attr('spec')[0].id}.")
+    
+    return obs_list
+
 
 def get_feats(model, config, see_bad_obs=False):
     env = DummyVecEnv([lambda: make_env(config=config)])
@@ -90,7 +108,7 @@ def get_feats(model, config, see_bad_obs=False):
         wandb.log({"CosSim": wandb.plots.HeatMap(labels, labels, cos_sim_matrix, show_text=False)})
 
     # save the cosine similarity matrix
-    save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices_{config['activation']}"
+    save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices"
     check_directory(save_path)
     np.save(save_path +f"/{config['learner']}_{config['env_name']}_{config['feat_dim']}feats_{str(config['run_num'])}.npy", cos_sim_matrix.numpy())
 
