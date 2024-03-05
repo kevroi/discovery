@@ -35,6 +35,8 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//2), CReLU())
         elif last_layer_activation == "fta":
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//20), FTA())
+        elif last_layer_activation == "lrelu":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.LeakyReLU())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
@@ -102,6 +104,8 @@ class NatureCNN(BaseFeaturesExtractor):
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//2), CReLU())
         elif last_layer_activation == "fta":
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//20), FTA())
+        elif last_layer_activation == "lrelu":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.LeakyReLU())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))

@@ -49,7 +49,7 @@ def get_obs(env, see_obs=False):
         # plt.imshow(np.concatenate([img], 1)) # shows the full environment
         # plt.savefig("../../plots/domains/DoorKey_5x5.pdf", dpi=300)
     
-    if env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-8x8-v0':
+    elif env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-8x8-v0':
         obs_list = []
         obs = env.reset()
         action_seq = [2, 0, 3, 2, 0, 2, 2, 2, 1, 5, 2, 2, 1, 2, 2, 2]
