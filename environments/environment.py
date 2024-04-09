@@ -190,7 +190,7 @@ class BaseEnvironment(object):
 
 class GridEnvironment(BaseEnvironment):
     def __init__(self):
-        grid_env = to_env_list('environments/gridenv.txt')
+        grid_env = to_env_list('environments/env_layouts/gridenv.txt')
         max_row, max_col, start_state, goal_state, obstacles, lava, _, _ = parse_env(grid_env)
         self.max_row = max_row
         self.max_col = max_col
@@ -202,7 +202,7 @@ class GridEnvironment(BaseEnvironment):
 
 class RoomEnvironment(BaseEnvironment):
     def __init__(self):
-        room_env = to_env_list('environments/room.txt')
+        room_env = to_env_list('environments/env_layouts/room.txt')
         max_row, max_col, start_state, goal_state, obstacles, lava, _, _ = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
@@ -215,7 +215,7 @@ class RoomEnvironment(BaseEnvironment):
 
 class I_MazeEnvironment(BaseEnvironment):
     def __init__(self):
-        I_maze_env = to_env_list('environments/imaze.txt')
+        I_maze_env = to_env_list('environments/env_layouts/imaze.txt')
         max_row, max_col, start_state, goal_state, obstacles, lava, _, _ = parse_env(I_maze_env)
         self.max_row = max_row
         self.max_col = max_col
@@ -227,7 +227,7 @@ class I_MazeEnvironment(BaseEnvironment):
 
 class HallEnvironment(BaseEnvironment):
     def __init__(self):
-        room_env = to_env_list('environments/hall.txt')
+        room_env = to_env_list('environments/env_layouts/hall.txt')
         max_row, max_col, start_state, goal_state, obstacles, lava, _, _ = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
@@ -239,7 +239,7 @@ class HallEnvironment(BaseEnvironment):
 
 class ToyEnvironment(BaseEnvironment):
     def __init__(self, name):
-        room_env = to_env_list(f"environments/{name}.txt")
+        room_env = to_env_list(f"environments/env_layouts/{name}.txt")
         max_row, max_col, start_state, goal_state, obstacles, lava, _, _ = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
@@ -251,7 +251,7 @@ class ToyEnvironment(BaseEnvironment):
 
 class phi1Environment(BaseEnvironment):
     def __init__(self, name):
-        room_env = to_env_list(f"environments/{name}.txt")
+        room_env = to_env_list(f"environments/env_layouts/{name}.txt")
         max_row, max_col, start_state, goal_state, obstacles, lava, phi_1, phi_2 = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
@@ -323,7 +323,7 @@ class phi1Environment(BaseEnvironment):
 
 class phi2Environment(BaseEnvironment):
     def __init__(self, name):
-        room_env = to_env_list(f"environments/{name}.txt")
+        room_env = to_env_list(f"environments/env_layouts/{name}.txt")
         max_row, max_col, start_state, goal_state, obstacles, lava, phi_1, phi_2 = parse_env(room_env)
         self.max_row = max_row
         self.max_col = max_col
@@ -451,5 +451,5 @@ def colour_from_letter(letter):
         return [255,255,255]
 
 if __name__ == "__main__":
-    file_path = "environments/2room.txt"  # Replace with the path to your text file
+    file_path = "environments/env_layouts/2room.txt"  # Replace with the path to your text file
     plot_gridworld(file_path)
