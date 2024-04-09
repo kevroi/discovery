@@ -115,6 +115,17 @@ def plot_average_heatmap(agent_name, env_name, folder_path, plot_sg_cossim=False
             plt.ylabel('Cosine Similarity')
             plt.show()
 
+def plot_identity_heatmap():
+    identity_matrix = np.identity(11)
+    plt.figure(figsize=(10, 8))
+    plt.imshow(identity_matrix, cmap='gist_heat', interpolation='nearest')
+    plt.title(f'Identity Heatmap')
+    plt.clim(0.5,1.0)
+    cbar = plt.colorbar()
+    cbar.ax.set_yticklabels(cbar.ax.get_yticklabels(), fontsize=18)
+    # plt.show()
+    plt.savefig(f"plots/feature_activations/minigrid_doorkey_5x5/tabular.pdf")
+
 
 def plot_sg_cossim(agent_name, env_name, folder_path, feat_dims=[120]):
     subgoal_indices = get_subgoal_index({'env_name': env_name})
@@ -168,17 +179,25 @@ def plot_sg_cossim(agent_name, env_name, folder_path, feat_dims=[120]):
 
 def plot_sg_cossim_diff_act(agent_name, env_name, folder_paths, feat_dims=[12]):
     subgoal_indices = get_subgoal_index({'env_name': env_name})
-    for folder_path in folder_paths:
-        for i, index in enumerate(subgoal_indices):
-            plt.figure()
-            plt.gca().spines['top'].set_visible(False)
-            plt.gca().spines['right'].set_visible(False)
-            plt.gca().spines['bottom'].set_visible(True)
-            plt.gca().spines['left'].set_visible(True)
-            plt.ylim(0.0, 1)
-            # plt.title(f'Cosine Similarity with subgoal {i}')
-            plt.xlabel('Timestep')
-            plt.ylabel('Cosine Similarity')
+    colors = {"experiments/FeatAct_minigrid/cos_sim_matrices_relu": "#0077BB",
+          "experiments/FeatAct_minigrid/cos_sim_matrices_fta": "#EE3377",
+          "experiments/FeatAct_minigrid/cos_sim_matrices_crelu": "#EE7733",
+          "512": "#009988"}
+    labels = {"experiments/FeatAct_minigrid/cos_sim_matrices_relu": "ReLU",
+          "experiments/FeatAct_minigrid/cos_sim_matrices_fta": "FTA",
+          "experiments/FeatAct_minigrid/cos_sim_matrices_crelu": "CReLU",
+          }
+    for i, index in enumerate(subgoal_indices):
+        plt.figure()
+        plt.gca().spines['top'].set_visible(False)
+        plt.gca().spines['right'].set_visible(False)
+        plt.gca().spines['bottom'].set_visible(True)
+        plt.gca().spines['left'].set_visible(True)
+        plt.ylim(0.0, 1)
+        # plt.title(f'Cosine Similarity with subgoal {i}')
+        plt.xlabel('Timestep')
+        plt.ylabel('Cosine Similarity')
+        for folder_path in folder_paths:
             for feat_dim in feat_dims:
                 # Initialize variables to store the sum of matrices and the count of matrices
                 sum_matrix = None
@@ -206,16 +225,36 @@ def plot_sg_cossim_diff_act(agent_name, env_name, folder_paths, feat_dims=[12]):
                             std_error_matrix += (matrix_data - average_matrix)**2
                         count += 1
                 std_error_matrix = np.sqrt(std_error_matrix / count)
+                std_error_matrix = 1.96 * std_error_matrix / np.sqrt(count)
 
-                plt.plot(average_matrix[index, :], label=f"{feat_dim} features")
+                plt.plot(average_matrix[index, :], label=labels[folder_path], color=colors[folder_path])
                 plt.fill_between(range(average_matrix.shape[0]),
                                     np.maximum(average_matrix[index, :] - std_error_matrix[index, :], np.zeros(average_matrix.shape[0])),
                                     np.minimum(average_matrix[index, :] + std_error_matrix[index, :], np.ones(average_matrix.shape[0])),
-                                    alpha=0.3)
-            plt.show()
-            plt.close()
+                                    alpha=0.3, color=colors[folder_path])
+        plt.legend()
+        # plt.show()
+        plt.savefig(f"plots/cos_sim_line/minigrid_doorkey_5x5/cossimline_{agent_name}_{env_name}_sg{i}_acts.pdf")
+        plt.close()
 
 def plot_sg_cossim_diff_feats(agent_name, env_name, folder_path, feat_dims=[8, 32]):
+    # # BLUE Gradient
+    # colors = {"2": "#79abe1",
+    #       "32": "#0077BB",
+    #       "256": "#00356c",
+    #       "512": "#009988"}
+
+    # # Orange Gradient
+    # colors = {"4": "#fec44f",
+    #       "32": "#EE7733",
+    #       "256": "#993404"}
+    
+    # # Pink Gradient
+    colors = {
+          "40": "#EE3377",
+          "160": "#cd0bbc",
+          "640": "#661100"}
+
     subgoal_indices = get_subgoal_index({'env_name': env_name})
     for i, index in enumerate(subgoal_indices):
         plt.figure()
@@ -255,13 +294,17 @@ def plot_sg_cossim_diff_feats(agent_name, env_name, folder_path, feat_dims=[8, 3
                     count += 1
             std_error_matrix = np.sqrt(std_error_matrix / count)
 
-            plt.plot(average_matrix[index, :], label=f"{feat_dim} features")
+            # calciualte 95% confidence interval
+            std_error_matrix = 1.96 * std_error_matrix / np.sqrt(count)
+
+            plt.plot(average_matrix[index, :], label=f"{feat_dim} features", color = colors[str(feat_dim)])
             plt.fill_between(range(average_matrix.shape[0]),
                                 np.maximum(average_matrix[index, :] - std_error_matrix[index, :], np.zeros(average_matrix.shape[0])),
                                 np.minimum(average_matrix[index, :] + std_error_matrix[index, :], np.ones(average_matrix.shape[0])),
-                                alpha=0.3)
+                                alpha=0.3, color=colors[str(feat_dim)])
         plt.legend()
-        plt.show()
+        # plt.show()
+        plt.savefig(f"plots/cos_sim_line/minigrid_doorkey_5x5/cossimline_{agent_name}_{env_name}_sg{i}_fta.pdf")
         plt.close()
 
 
@@ -288,8 +331,9 @@ def check_directory(directory):
         os.makedirs(directory)
 
 if __name__=="__main__":
-    plot_average_heatmap("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices",
-                         feat_dim=256, plot_sg_cossim=False, activation="crelu")
+    # plot_average_heatmap("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices",
+                        #  feat_dim=64, plot_sg_cossim=False, activation="crelu")
     # plot_sg_cossim("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices", feat_dims=[8, 32])
-    # plot_sg_cossim_diff_act("PPO", "MiniGrid-DoorKey-5x5-v0", ["experiments/FeatAct_minigrid/cos_sim_matrices_relu", "experiments/FeatAct_minigrid/cos_sim_matrices_fta"], feat_dims=[8, 32])
-    # plot_sg_cossim_diff_feats("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices_relu", feat_dims=[2, 16, 128])
+    # plot_sg_cossim_diff_act("PPO", "MiniGrid-DoorKey-5x5-v0", ["experiments/FeatAct_minigrid/cos_sim_matrices_relu", "experiments/FeatAct_minigrid/cos_sim_matrices_fta", "experiments/FeatAct_minigrid/cos_sim_matrices_crelu"], feat_dims=[40])
+    plot_sg_cossim_diff_feats("PPO", "MiniGrid-DoorKey-5x5-v0", "experiments/FeatAct_minigrid/cos_sim_matrices_fta", feat_dims=[40, 160, 640])
+    # plot_identity_heatmap()
