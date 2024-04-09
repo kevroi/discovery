@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from activations import *
+from utils.activations import *
 import matplotlib.cm as cm
 
 # Number of random tensors to generate

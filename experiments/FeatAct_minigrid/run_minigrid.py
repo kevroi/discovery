@@ -6,10 +6,10 @@ from argparse import ArgumentParser
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 from agents.ddqn import DoubleDQN
-from cnn import MinigridFeaturesExtractor, NatureCNN
+from utils.cnn import MinigridFeaturesExtractor, NatureCNN
 import wandb
-from activations import *
-from utils import make_env
+from utils.activations import *
+from experiments.FeatAct_minigrid.helpers import make_env
 
 def main(args):
     # Load YAML hyperparameters

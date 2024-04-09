@@ -8,9 +8,9 @@ import torch
 import os
 from stable_baselines3 import PPO
 from agents.ddqn import DoubleDQN
-from cnn import MinigridFeaturesExtractor, NatureCNN
+from utils.cnn import MinigridFeaturesExtractor, NatureCNN
 from stable_baselines3.common.utils import obs_as_tensor
-from activations import CReLU, FTA
+from utils.activations import CReLU, FTA
 
 import random
 import os

@@ -4,7 +4,7 @@ from minigrid.wrappers import ImgObsWrapper, FullyObsWrapper
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
-from cnn import MinigridFeaturesExtractor
+from utils.cnn import MinigridFeaturesExtractor
 import wandb
 from wandb.integration.sb3 import WandbCallback
 from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv

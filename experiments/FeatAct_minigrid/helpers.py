@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 # HELPER FUNCTIONS ##
 def make_env(config):
     if config['env_name'] == "FourRoomChainEnv":
-        from n_room_env import FourRoomChainEnv
+        from environments.custom_minigrids import FourRoomChainEnv
         gym.register(id="FourRoomChainEnv", entry_point=FourRoomChainEnv)
         env = gym.make(config['env_name'], render_mode='rgb_array')
         env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
         env = ImgObsWrapper(env)
     elif config['env_name'] == "TwoRoomEnv":
-        from n_room_env import TwoRoomEnv
+        from environments.custom_minigrids import TwoRoomEnv
         gym.register(id="TwoRoomEnv", entry_point=TwoRoomEnv)
         env = gym.make(config['env_name'], render_mode='rgb_array', random_hallway=config['random_hallway'])
         env = FullyObsWrapper(env)
