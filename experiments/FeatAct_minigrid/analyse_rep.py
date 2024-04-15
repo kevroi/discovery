@@ -3,6 +3,7 @@ import torch
 import torchvision
 import zipfile
 from stable_baselines3.common.vec_env import DummyVecEnv
+from experiments.FeatAct_minigrid.helpers import *
 from utils import *
 import matplotlib.pyplot as plt
 import wandb
