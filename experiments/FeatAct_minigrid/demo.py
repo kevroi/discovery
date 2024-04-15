@@ -15,6 +15,7 @@ import pygame
 
 config = {
     "env_name": "TwoRoomEnv",
+    # "env_name": "FourRoomEnv",
     "random_hallway": False,
     "render_mode": "human",
 }

@@ -22,7 +22,7 @@ class TwoRoomEnv(MiniGridEnv):
         agent_start_pos=(1, 1),
         agent_start_dir=0,
         hallway_pos=(3,7),
-        random_hallway=False,
+        random_hallway=False, # if True, hallway position is randomly generated (we uniformly sample from a distribution of TwoRoomEnvs)
         max_steps: int = None,
         **kwargs,
     ):
@@ -49,7 +49,6 @@ class TwoRoomEnv(MiniGridEnv):
     # MiniGridEnv._gen_grid
     @abstractmethod
     def _gen_grid(self, width, height):
-        # Create an empty grid
         self.grid = Grid(width, height)
 
         # Generate the surrounding walls
@@ -79,6 +78,9 @@ class TwoRoomEnv(MiniGridEnv):
         self.mission = "two-room"
 
 class FourRoomEnv(MiniGridEnv):
+    """
+    Asymmetric 4-room environment.
+    """
     def __init__(
         self,
         width=13,

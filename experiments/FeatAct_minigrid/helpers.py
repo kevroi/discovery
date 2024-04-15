@@ -21,6 +21,12 @@ def make_env(config):
         env = gym.make(config['env_name'], render_mode=config['render_mode'], random_hallway=config['random_hallway'])
         env = FullyObsWrapper(env)
         env = ImgObsWrapper(env)
+    elif config['env_name'] == "FourRoomEnv":
+        from environments.custom_minigrids import FourRoomEnv
+        gym.register(id="FourRoomEnv", entry_point=FourRoomEnv)
+        env = gym.make(config['env_name'], render_mode=config['render_mode'])
+        env = FullyObsWrapper(env)
+        env = ImgObsWrapper(env)
     else:
         env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = RGBImgObsWrapper(env)
