@@ -12,17 +12,17 @@ def make_env(config):
     if config['env_name'] == "FourRoomChainEnv":
         from environments.custom_minigrids import FourRoomChainEnv
         gym.register(id="FourRoomChainEnv", entry_point=FourRoomChainEnv)
-        env = gym.make(config['env_name'], render_mode='rgb_array')
+        env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
         env = ImgObsWrapper(env)
     elif config['env_name'] == "TwoRoomEnv":
         from environments.custom_minigrids import TwoRoomEnv
         gym.register(id="TwoRoomEnv", entry_point=TwoRoomEnv)
-        env = gym.make(config['env_name'], render_mode='rgb_array', random_hallway=config['random_hallway'])
+        env = gym.make(config['env_name'], render_mode=config['render_mode'], random_hallway=config['random_hallway'])
         env = FullyObsWrapper(env)
         env = ImgObsWrapper(env)
     else:
-        env = gym.make(config['env_name'])
+        env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = RGBImgObsWrapper(env)
         env = ImgObsWrapper(env)
     env = Monitor(env)

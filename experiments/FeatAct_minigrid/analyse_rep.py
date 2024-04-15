@@ -7,6 +7,10 @@ from utils import *
 import matplotlib.pyplot as plt
 import wandb
 
+"""
+Functions to analyse the representations learned by the agent.
+"""
+
 def get_obs(env, see_obs=False):
     print(env.get_attr("spec")[0].id)
     if env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-5x5-v0':
