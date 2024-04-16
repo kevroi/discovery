@@ -37,6 +37,8 @@ def make_env(config):
 
 ## HELPER FUNCTIONS ##
 def pre_process_obs(obs, model):
+    if obs.ndim == 3:
+        obs = np.expand_dims(obs, axis=0) # add batch dimension if its just one observation
     obs = np.transpose(obs, (0,3,1,2)) # bring colour channel to front
     return obs_as_tensor(obs, model.policy.device)
 
