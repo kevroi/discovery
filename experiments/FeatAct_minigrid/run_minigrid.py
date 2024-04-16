@@ -80,6 +80,8 @@ def main(args):
                                                             env=env.envs[0],
                                                             last_layer_activation=hparam_yaml["activation"]),
                             )
+    else:
+        raise ValueError("Invalid CNN type. Choose from 'nature', 'minigrid' or 'minigrid_sp'.")
     
     if hparam_yaml["learner"] == "PPO":
         model = PPO(hparam_yaml["policy_type"], env,
@@ -92,7 +94,7 @@ def main(args):
                 verbose=1, tensorboard_log=f"runs/{run_id}")
         wandb.watch(model.policy.features_extractor,
                     log_freq=100,
-                    log="all", # log gradients and parameters
+                    log="all",
                     log_graph=True)
     elif hparam_yaml["learner"] == "DQN":
         model = DQN(hparam_yaml["policy_type"], env,
@@ -128,6 +130,7 @@ def main(args):
     print(f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features.")
     model.learn(total_timesteps=hparam_yaml["timesteps"])
     model.save(f"experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}")
+    print(f"Model saved at experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}")
 
     if hparam_yaml['analyse_rep']:
         from analyse_rep import get_feats
