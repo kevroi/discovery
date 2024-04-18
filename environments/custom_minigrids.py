@@ -32,7 +32,11 @@ class TwoRoomEnv(MiniGridEnv):
         self.random_hallway = random_hallway
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
-        random.seed(0) # seed for hallway positions
+        # Randomly place hallway
+        if self.random_hallway:
+            self.hallway_pos = (random.randint(1, height-2), self.hallway_pos[1])
+            self.num_variants = height-2 # number of different TwoRoomEnvs
+            self.variant_idx = self.hallway_pos[0] # index of the current TwoRoomEnv
 
         super().__init__(
             mission_space=mission_space,
@@ -53,10 +57,6 @@ class TwoRoomEnv(MiniGridEnv):
 
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
-
-        # Randomly place hallway
-        if self.random_hallway:
-            self.hallway_pos = (random.randint(1, height-2), self.hallway_pos[1])
 
         # Generate verical separation wall
         for i in range(0, self.hallway_pos[0]):
