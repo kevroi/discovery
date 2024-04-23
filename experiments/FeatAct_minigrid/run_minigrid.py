@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 from agents.ddqn import DoubleDQN
-from utils.cnn import MinigridFeaturesExtractor, SharedPrivateFeaturesExtractor, NatureCNN
+from utils.cnn import MinigridFeaturesExtractor, SharedPrivateFeaturesExtractor, NatureCNN, MaskedCNNFeaturesExtractor
 import wandb
 from utils.activations import *
 from experiments.FeatAct_minigrid.helpers import make_env
@@ -92,10 +92,11 @@ def main(args):
                 n_steps=hparam_yaml["n_steps"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
-        wandb.watch(model.policy.features_extractor,
-                    log_freq=100,
-                    log="all",
-                    log_graph=True)
+        if hparam_yaml["use_wandb"]: 
+            wandb.watch(model.policy.features_extractor,
+                        log_freq=100,
+                        log="all",
+                        log_graph=True)
     elif hparam_yaml["learner"] == "DQN":
         model = DQN(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
@@ -107,10 +108,11 @@ def main(args):
                 target_update_interval=hparam_yaml["target_update_interval"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
-        wandb.watch(model.policy.q_net.features_extractor,
-                    log_freq=100,
-                    log="all",
-                    log_graph=True)
+        if hparam_yaml["use_wandb"]: 
+            wandb.watch(model.policy.q_net.features_extractor,
+                        log_freq=100,
+                        log="all",
+                        log_graph=True)
     elif hparam_yaml["learner"] == "DDQN":
         model = DoubleDQN(hparam_yaml["policy_type"], env,
                 learning_rate=hparam_yaml["lr"],
@@ -122,10 +124,11 @@ def main(args):
                 target_update_interval=hparam_yaml["target_update_interval"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
-        wandb.watch(model.policy.q_net.features_extractor,
-                    log_freq=100,
-                    log="all",
-                    log_graph=True)
+        if hparam_yaml["use_wandb"]: 
+            wandb.watch(model.policy.q_net.features_extractor,
+                        log_freq=100,
+                        log="all",
+                        log_graph=True)
     
     print(f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features.")
     model.learn(total_timesteps=hparam_yaml["timesteps"])

@@ -55,13 +55,107 @@ class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
         features = super().forward(observations)
         variant_idx = self.env.variant_idx  # Assuming env has a variant_idx attribute
 
-        for i in range(self.num_variants):
-            if i != variant_idx:
-                features[:, self.num_shared+i] = features[:, self.num_shared+i].detach()
-            else:
-                features[:, self.num_shared+i].requires_grad_()  # Reattach the ith variant
+        # split the features into shared and private
+        # shared_features = features[:, :self.num_shared]
+        # private_features = features[:, self.num_shared:]
+
+        # features.register_hook(lambda x: self.modify_grad(x, [variant_idx]))
+
+        # # detach the private features
+        # for i in range(self.num_variants):
+        #     if i == variant_idx:
+        #         private_to_use = private_features[:, i]
+        #     else:
+        #         # private_features[:, i] = 0.0  # Zero out the private features
+        #         masked_privates = torch.zeros_like(private_features[:, i])
+
+        # # unsplit the features
+        # features = torch.cat([shared_features, private_to_use.unsqueeze(1).detach(), ], dim=1)
+
+        
+        # for i in range(self.num_variants):
+        #     if i == variant_idx and not features[:, self.num_shared+i].requires_grad:
+        #         features[:, self.num_shared+i].detach.requires_grad_()  # Reattach the ith variant
+        #     else:
+        #         features[:, self.num_shared+i] = features[:, self.num_shared+i].detach()
+
+        # set private features to zero
+        self.set_mask(variant_idx)
+        features = features * self.mask
+        top = features[:, :self.num_shared+variant_idx-1]
+        middle = features[:, self.num_shared+variant_idx-1].detach().unsqueeze(1)
+        if variant_idx == self.num_variants:
+            features = torch.cat([top, middle], dim=1)
+        else:
+            bottom = features[:, self.num_shared+variant_idx:]
+            features = torch.cat([top, middle, bottom], dim=1)
 
         return features
+    
+    def modify_grad(self, x, inds):
+        x[inds] = 0
+        return x
+    
+    def set_mask(self, variant_idx):
+        mask = torch.zeros(self.num_shared + self.num_variants)
+        mask[:self.num_shared] = 1
+        mask[self.num_shared+variant_idx-1] = 1 # -1 because variant_idx is 1-indexed
+        self.mask = mask
+    
+
+class MaskedCNNFeaturesExtractor(MinigridFeaturesExtractor):
+    def __init__(self, observation_space: gym.Space, env: gym.Env,
+                 features_dim: int = 512, normalized_image: bool = False, last_layer_activation="relu") -> None:
+        self.env = env
+        self.num_shared = features_dim
+        self.num_variants = env.num_variants
+        self.mask = None
+        super().__init__(observation_space, features_dim+self.num_variants, normalized_image, last_layer_activation)
+
+    def set_mask(self, variant_idx):
+        mask = torch.zeros(self.num_shared + self.num_variants)
+        mask[:self.num_shared] = 1
+        mask[self.num_shared+variant_idx-1] = 1 # -1 because variant_idx is 1-indexed
+        self.mask = mask
+
+    def forward(self, observations: torch.Tensor) -> torch.Tensor:
+        features = super().forward(observations)
+        variant_idx = self.env.variant_idx
+        # print("Variant idx:", variant_idx)
+        self.set_mask(variant_idx)
+        features = features * self.mask
+        # features.register_hook(lambda grad: grad * self.mask)
+        return features
+
+    # def zero_grad(self):
+    #     if self.mask is not None:
+    #         self.mask.grad.zero_()
+
+    # def backward(self, retain_graph=False):
+    #     if self.mask is not None:
+    #         self.mask.retain_grad()
+    #         self.mask.grad = torch.where(self.mask > 0.0, self.mask.grad, torch.zeros_like(self.mask.grad))
+    #     super().backward(retain_graph=retain_graph)
+
+    # def backward(self, retain_graph=False):
+    #     if self.mask is not None:
+    #         # Retain the gradient of the mask
+    #         self.mask.retain_grad()
+    #         # Copy the original mask gradients for comparison
+    #         mask_grad_orig = self.mask.grad.clone()
+    #         # Update the mask gradients based on the mask values
+    #         self.mask.grad = torch.where(self.mask > 0.0, self.mask.grad, torch.zeros_like(self.mask.grad))
+    #         # Calculate the change in gradients for masked features
+    #         mask_grad_change = self.mask.grad - mask_grad_orig
+    #         # Print out the change in gradients
+    #         print("Change in gradients for masked features:", mask_grad_change)
+    #     # Call the base class's backward() method
+    #     breakpoint()
+    #     super().backward(retain_graph=retain_graph)
+
+    # def detach_mask(self):
+    #     if self.mask is not None:
+    #         self.mask = self.mask.detach().clone().requires_grad_(True)
 
 
         
