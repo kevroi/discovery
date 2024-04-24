@@ -81,7 +81,7 @@ class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
 
         # set private features to zero
         self.set_mask(variant_idx)
-        features = features * self.mask
+        features = features * self.mask.to(features.device)
         top = features[:, :self.num_shared+variant_idx-1]
         middle = features[:, self.num_shared+variant_idx-1].detach().unsqueeze(1)
         if variant_idx == self.num_variants:
