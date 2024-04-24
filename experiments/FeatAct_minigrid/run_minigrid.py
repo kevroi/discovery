@@ -90,6 +90,7 @@ def main(args):
                 batch_size=hparam_yaml["batch_size"],
                 n_epochs=hparam_yaml["n_epochs"],
                 n_steps=hparam_yaml["n_steps"],
+                stats_window_size=hparam_yaml["stats_window_size"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
         if hparam_yaml["use_wandb"]: 
@@ -106,6 +107,7 @@ def main(args):
                 train_freq=hparam_yaml["train_freq"],
                 exploration_final_eps=hparam_yaml["exploration_final_eps"],
                 target_update_interval=hparam_yaml["target_update_interval"],
+                stats_window_size=hparam_yaml["stats_window_size"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
         if hparam_yaml["use_wandb"]: 
@@ -122,6 +124,7 @@ def main(args):
                 train_freq=hparam_yaml["train_freq"],
                 exploration_final_eps=hparam_yaml["exploration_final_eps"],
                 target_update_interval=hparam_yaml["target_update_interval"],
+                stats_window_size=hparam_yaml["stats_window_size"],
                 policy_kwargs=policy_kwargs,
                 verbose=1, tensorboard_log=f"runs/{run_id}")
         if hparam_yaml["use_wandb"]: 
