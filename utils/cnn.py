@@ -46,14 +46,17 @@ class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
     def __init__(self, observation_space: gym.Space, env: gym.Env,
                  features_dim: int = 512, normalized_image: bool = False, last_layer_activation="relu") -> None:
         self.env = env
-        self.num_shared = features_dim
+        self.private_feat_dim = 4
+        self.num_shared = features_dim-self.private_feat_dim
         self.num_variants = env.num_variants
-        super().__init__(observation_space, features_dim+self.num_variants, normalized_image, last_layer_activation)
-        # self.private_weights = nn.Parameter(torch.randn(self.num_variants))
+        self.private_feat_vecs = [torch.rand(self.private_feat_dim) for i in range(self.num_variants)]
+        for priv_vec in self.private_feat_vecs:
+            priv_vec.requires_grad = True
+        super().__init__(observation_space, features_dim, normalized_image, last_layer_activation)
 
-    def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        features = super().forward(observations)
-        variant_idx = self.env.variant_idx  # Assuming env has a variant_idx attribute
+    # def forward(self, observations: torch.Tensor) -> torch.Tensor:
+    #     features = super().forward(observations)
+    #     variant_idx = self.env.variant_idx  # Assuming env has a variant_idx attribute
 
         # split the features into shared and private
         # shared_features = features[:, :self.num_shared]
@@ -79,18 +82,34 @@ class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
         #     else:
         #         features[:, self.num_shared+i] = features[:, self.num_shared+i].detach()
 
-        # set private features to zero
-        self.set_mask(variant_idx)
-        features = features * self.mask.to(features.device)
-        top = features[:, :self.num_shared+variant_idx-1]
-        middle = features[:, self.num_shared+variant_idx-1].detach().unsqueeze(1)
-        if variant_idx == self.num_variants:
-            features = torch.cat([top, middle], dim=1)
-        else:
-            bottom = features[:, self.num_shared+variant_idx:]
-            features = torch.cat([top, middle, bottom], dim=1)
+        # # set private features to zero
+        # self.set_mask(variant_idx)
+        # features = features * self.mask.to(features.device)
+        # top = features[:, :self.num_shared+variant_idx-1]
+        # middle = features[:, self.num_shared+variant_idx-1].detach().unsqueeze(1)
+        # if variant_idx == self.num_variants:
+        #     features = torch.cat([top, middle], dim=1)
+        # else:
+        #     bottom = features[:, self.num_shared+variant_idx:]
+        #     features = torch.cat([top, middle, bottom], dim=1)
 
-        return features
+        # return features
+
+
+    def forward(self, observations: torch.Tensor) -> torch.Tensor:
+        features = super().forward(observations)
+        features = features[:, :-self.private_feat_dim]
+        
+        variant_idx = self.env.variant_idx
+        sp_feats = torch.cat((features, self.private_feat_vecs[variant_idx-1].repeat(features.shape[0], 1)),
+                             dim=1)
+        print("variant idx:", variant_idx)
+        # if variant_idx == 3:
+        print("priv feat vec 1:", self.private_feat_vecs[variant_idx-1])
+        print("priv feat grad", self.private_feat_vecs[variant_idx-1].grad)
+        return sp_feats
+
+    
     
     def modify_grad(self, x, inds):
         x[inds] = 0
