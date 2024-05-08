@@ -1,0 +1,2 @@
+# Performance of a Q learning agent with eigenoptions
+We augment the action set of the behaviour agent to now include both primitive actions and policies. We add more and more eigenoptions to the set, in order of increasing eigenvalue. We also include the eigenoptions derived from the negations of the eigenfunctions. We neglect the constant eigenfunction, as it is not useful for navigating the state space.

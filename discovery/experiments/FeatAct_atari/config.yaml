@@ -1,0 +1,8 @@
+env_name: 'ALE/MontezumaRevenge-v5'
+project_name: 'PPO_on_Atari_Tests'
+timesteps: 1000000
+n_envs: 4
+policy_type: 'CnnPolicy'
+lr: 0.0003
+feat_dim: 32
+record_video: True
