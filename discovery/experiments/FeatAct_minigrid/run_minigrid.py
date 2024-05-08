@@ -5,15 +5,15 @@ import yaml
 from argparse import ArgumentParser
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
-from agents.ddqn import DoubleDQN
-from utils.cnn import MinigridFeaturesExtractor, SharedPrivateFeaturesExtractor, NatureCNN, MaskedCNNFeaturesExtractor
+from discovery.agents.ddqn import DoubleDQN
+from discovery.utils.cnn import MinigridFeaturesExtractor, SharedPrivateFeaturesExtractor, NatureCNN, MaskedCNNFeaturesExtractor
 import wandb
-from utils.activations import *
-from experiments.FeatAct_minigrid.helpers import make_env
+from discovery.utils.activations import *
+from discovery.experiments.FeatAct_minigrid.helpers import make_env
 
 def main(args):
     # Load YAML hyperparameters
-    with open(f'experiments/FeatAct_minigrid/{args.config_file}', 'r') as f:
+    with open(f'discovery/experiments/FeatAct_minigrid/{args.config_file}', 'r') as f:
         hparam_yaml = yaml.safe_load(f)
     # Replace yaml default hypers with command line arguments
     for k, v in vars(args).items():

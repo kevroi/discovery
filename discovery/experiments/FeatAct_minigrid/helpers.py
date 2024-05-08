@@ -16,13 +16,13 @@ def make_env(config):
         env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
         env = ImgObsWrapper(env)
     elif config['env_name'] == "TwoRoomEnv":
-        from environments.custom_minigrids import TwoRoomEnv
+        from discovery.environments.custom_minigrids import TwoRoomEnv
         gym.register(id="TwoRoomEnv", entry_point=TwoRoomEnv)
         env = gym.make(config['env_name'], render_mode=config['render_mode'], random_hallway=config['random_hallway'])
         env = FullyObsWrapper(env)
         env = ImgObsWrapper(env)
     elif config['env_name'] == "FourRoomEnv":
-        from environments.custom_minigrids import FourRoomEnv
+        from discovery.environments.custom_minigrids import FourRoomEnv
         gym.register(id="FourRoomEnv", entry_point=FourRoomEnv)
         env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = FullyObsWrapper(env)
