@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 from discovery.agents.ddqn import DoubleDQN
-from discovery.utils.cnn import MinigridFeaturesExtractor, SharedPrivateFeaturesExtractor, NatureCNN, MaskedCNNFeaturesExtractor
+from discovery.utils.feat_extractors import MinigridFeaturesExtractor, SharedPrivateFeaturesExtractor, NatureCNN, MaskedCNNFeaturesExtractor
 import wandb
 from discovery.utils.activations import *
 from discovery.experiments.FeatAct_minigrid.helpers import make_env

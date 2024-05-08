@@ -7,7 +7,17 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.preprocessing import is_image_space
 
-from utils.activations import CReLU, FTA
+from discovery.utils.activations import CReLU, FTA
+
+class ClimbingFeatureExtractor(BaseFeaturesExtractor):
+    def __init__(self, observation_space: gym.Space):
+        height = observation_space["agent_loc"].n
+        super(ClimbingFeatureExtractor, self).__init__(observation_space, features_dim=height+2)
+
+    def forward(self, observations):
+        features = torch.cat((observations["agent_loc"], observations["at_anchor"]), dim=-1)
+        return features
+
 
 # CNN from MiniGrid Documentation
 class MinigridFeaturesExtractor(BaseFeaturesExtractor):
@@ -95,7 +105,6 @@ class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
 
         # return features
 
-
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         features = super().forward(observations)
         features = features[:, :-self.private_feat_dim]
@@ -109,8 +118,6 @@ class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
         print("priv feat grad", self.private_feat_vecs[variant_idx-1].grad)
         return sp_feats
 
-    
-    
     def modify_grad(self, x, inds):
         x[inds] = 0
         return x
