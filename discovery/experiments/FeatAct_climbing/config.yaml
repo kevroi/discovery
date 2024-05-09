@@ -1,0 +1,25 @@
+env_name: 'discovery/Climbing-v0'
+learner: 'PPO'
+project_name: 'testing_climber'
+timesteps: 30000
+policy_type: 'MultiInputPolicy'
+stats_window_size: 10
+
+# Shared hypers
+lr: 0.0003 # PPO_def: 3e-4
+gamma: 0.99 # PPO_def: 0.99
+batch_size: 96 # PPO_def: 64, DQN_def: 32
+
+# PPO hypers & SB3 defaults
+n_epochs: 4 # 10
+n_steps: 128 # 2048
+n_envs: 16 # 1 #TODO this affects DDQN too!
+
+# (D)DQN hypers & SB3 defaults
+learning_starts: 1000 # 100
+train_freq: 1 # 4
+exploration_final_eps: 0.1 # 0.05
+target_update_interval: 500 # 10000
+
+# Env Specific hypers
+see_anchor: False
