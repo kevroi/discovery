@@ -14,4 +14,4 @@ module load python/3.9
 source venv/bin/activate
 wandb login
 
-python $me/discovery/experiments/FeatAct_minigrid/run_minigrid.py --env_name=$ENV_NAME --learner=$LEARNER --lr=$LR --use_wandb
+python $me/discovery/discovery/experiments/FeatAct_minigrid/run_minigrid.py --env_name=$ENV_NAME --learner=$LEARNER --lr=$LR --use_wandb
