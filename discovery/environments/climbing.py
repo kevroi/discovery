@@ -117,6 +117,7 @@ class ClimbingEnv(gym.Env):
         elif action == DEFAULT_ANCHOR_ACTION:
             if self._at_anchor():
                 self._last_anchor = self._agent_location
+                self._agent_location += 1
             else:
                 self._agent_location = self._last_anchor
 
