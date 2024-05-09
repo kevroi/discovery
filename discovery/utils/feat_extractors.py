@@ -11,11 +11,16 @@ from discovery.utils.activations import CReLU, FTA
 
 class ClimbingFeatureExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.Space):
-        height = observation_space["agent_loc"].n
-        super(ClimbingFeatureExtractor, self).__init__(observation_space, features_dim=height+2)
+        total_features_dim = observation_space["agent_loc"].n
+        if "at_anchor" in observation_space:
+            total_features_dim += 2
+        super(ClimbingFeatureExtractor, self).__init__(observation_space, features_dim=total_features_dim)
 
     def forward(self, observations):
-        features = torch.cat((observations["agent_loc"], observations["at_anchor"]), dim=-1)
+        if "at_anchor" not in observations:
+            features = torch.tensor(observations["agent_loc"], dtype=torch.float32)
+        else:
+            features = torch.cat((observations["agent_loc"], observations["at_anchor"]), dim=-1)
         return features
 
 
