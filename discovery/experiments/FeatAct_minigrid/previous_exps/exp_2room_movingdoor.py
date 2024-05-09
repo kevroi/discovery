@@ -3,10 +3,10 @@ from minigrid.wrappers import ImgObsWrapper, FullyObsWrapper
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
-from utils.cnn import MinigridFeaturesExtractor
+from discovery.utils.feat_extractors import MinigridFeaturesExtractor
 import wandb
 from wandb.integration.sb3 import WandbCallback
-from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv
+from discovery.environments.custom_minigrids import TwoRoomEnv
 
 
 #hypothesis - does the agent (tf5hze1v) retain the same feature activations once the door moves?

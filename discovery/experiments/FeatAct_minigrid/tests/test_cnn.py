@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 import torch
 import os
 from stable_baselines3 import PPO
-from agents.ddqn import DoubleDQN
-from utils.cnn import MinigridFeaturesExtractor, NatureCNN
+from discovery.agents.ddqn import DoubleDQN
+from discovery.utils.feat_extractors import MinigridFeaturesExtractor, NatureCNN
 from stable_baselines3.common.utils import obs_as_tensor
-from utils.activations import CReLU, FTA
+from discovery.utils.activations import CReLU, FTA
 
 import random
 import os

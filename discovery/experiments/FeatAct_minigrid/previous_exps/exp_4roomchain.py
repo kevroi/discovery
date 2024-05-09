@@ -8,8 +8,8 @@ from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, RGBImgPartialObsW
 import gymnasium as gym
 import wandb
 from wandb.integration.sb3 import WandbCallback
-from utils.cnn import MinigridFeaturesExtractor
-from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv, FourRoomChainEnv, SixRoomChainEnv
+from discovery.utils.feat_extractors import MinigridFeaturesExtractor
+from discovery.experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv, FourRoomChainEnv, SixRoomChainEnv
 print("all loaded")
 
 config = {

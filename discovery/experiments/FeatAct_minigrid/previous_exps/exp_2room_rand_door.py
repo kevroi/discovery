@@ -4,10 +4,10 @@ from minigrid.wrappers import ImgObsWrapper, FullyObsWrapper
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
-from utils.cnn import MinigridFeaturesExtractor
+from discovery.utils.feat_extractors import MinigridFeaturesExtractor
 import wandb
 from wandb.integration.sb3 import WandbCallback
-from experiments.feat_att_minigrid.n_room_env import TwoRoomEnv
+from discovery.environments.custom_minigrids import TwoRoomEnv
 
 MAX_EPISODES = 1000
 HALLWAY_LOCS = [(3,7), (5,7), (1,7)]

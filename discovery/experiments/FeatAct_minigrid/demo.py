@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from stable_baselines3 import PPO
-from utils.cnn import MinigridFeaturesExtractor
+from discovery.utils.feat_extractors import MinigridFeaturesExtractor
 from helpers import make_env
 from stable_baselines3.common.utils import obs_as_tensor
 from environments.custom_minigrids import TwoRoomEnv, FourRoomEnv, FourRoomChainEnv
