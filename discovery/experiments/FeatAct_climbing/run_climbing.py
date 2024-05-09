@@ -45,7 +45,7 @@ def main(args):
     # Create agent
     policy_kwargs = dict(
                     features_extractor_class=ClimbingFeatureExtractor,
-                    features_extractor_kwargs=dict(),
+                    features_extractor_kwargs=dict(include_anchor_bit=hparam_yaml['include_anchor_bit']),
                     )
     
     if hparam_yaml["learner"] == "PPO":

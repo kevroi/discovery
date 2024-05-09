@@ -22,4 +22,5 @@ exploration_final_eps: 0.1 # 0.05
 target_update_interval: 500 # 10000
 
 # Env Specific hypers
-see_anchor: False
+height: 50
+include_anchor_bit: True

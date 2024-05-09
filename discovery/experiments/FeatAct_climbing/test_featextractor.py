@@ -1,7 +1,7 @@
 import gymnasium as gym
 from gymnasium import spaces
 from discovery.environments import climbing
-from discovery.utils.climbing_feats import ClimbingFeatureExtractor
+from discovery.utils.feat_extractors import ClimbingFeatureExtractor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env

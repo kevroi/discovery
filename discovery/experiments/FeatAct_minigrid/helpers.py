@@ -30,7 +30,7 @@ def make_env(config):
     elif config['env_name'] == "discovery/Climbing-v0":
         from discovery.environments.climbing import ClimbingEnv
         gym.register(id="discovery/Climbing-v0", entry_point="discovery.environments.climbing:ClimbingEnv")
-        env = gym.make(config['env_name'], include_anchor_bit=config['see_anchor'])
+        env = gym.make(config['env_name'])
     else:
         env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = RGBImgObsWrapper(env)

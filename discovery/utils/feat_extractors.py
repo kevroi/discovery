@@ -10,17 +10,18 @@ from stable_baselines3.common.preprocessing import is_image_space
 from discovery.utils.activations import CReLU, FTA
 
 class ClimbingFeatureExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space: gym.Space):
+    def __init__(self, observation_space: gym.Space, include_anchor_bit: bool = False):
+        self.include_anchor_bit = include_anchor_bit
         total_features_dim = observation_space["agent_loc"].n
-        if "at_anchor" in observation_space:
+        if self.include_anchor_bit:
             total_features_dim += 2
         super(ClimbingFeatureExtractor, self).__init__(observation_space, features_dim=total_features_dim)
 
     def forward(self, observations):
-        if "at_anchor" not in observations:
-            features = torch.tensor(observations["agent_loc"], dtype=torch.float32)
-        else:
+        if self.include_anchor_bit:
             features = torch.cat((observations["agent_loc"], observations["at_anchor"]), dim=-1)
+        else:
+            features = torch.tensor(observations["agent_loc"], dtype=torch.float32)
         return features
 
 
