@@ -43,14 +43,12 @@ class ClimbingEnv(gym.Env):
         height: int = 8,
         anchor_interval: int = 4,
         randomized_actions: bool = False,
-        include_anchor_bit: bool = True,
     ):
         """Construct the environment."""
         self._height = height
         self._anchor_interval = anchor_interval
         self._randomized_actions = randomized_actions
         # If we randomize actions, we may switch the meanings of the two actions.
-        self._include_anchor_bit = include_anchor_bit
         self._random_action_sequence = None  # Will be set in `reset`.
         self._agent_location = 0
         self._last_anchor = 0
@@ -58,22 +56,13 @@ class ClimbingEnv(gym.Env):
 
         # The observations are dictionaries with the agent's location and a bit
         # indicating whether the agent is by an anchor.
-        # Adjust the observation space based on the include_anchor_bit flag
-        if self._include_anchor_bit:
-            self.observation_space = spaces.Dict(
-                {
-                    "agent_loc": spaces.Discrete(self._height),
-                    "at_anchor": spaces.Discrete(2),
-                    "last_anchor_loc": spaces.Discrete(self._height),
-                }
-            )
-        else:
-            self.observation_space = spaces.Dict(
-                {
-                    "agent_loc": spaces.Discrete(self._height),
-                    "last_anchor_loc": spaces.Discrete(self._height),
-                }
-            )
+        self.observation_space = spaces.Dict(
+            {
+                "agent_loc": spaces.Discrete(self._height),
+                "at_anchor": spaces.Discrete(2),
+                "last_anchor_loc": spaces.Discrete(self._height),
+            }
+        )
         self.action_space = spaces.Discrete(
             2
         )  # 0: move up, 1: anchor in --- unless randomized.
@@ -85,10 +74,11 @@ class ClimbingEnv(gym.Env):
         return self._agent_location in self._anchor_locations
 
     def _get_obs(self):
-        obs = {"agent_loc": self._agent_location, "last_anchor_loc": self._last_anchor}
-        if self._include_anchor_bit:
-            obs["at_anchor"] = int(self._at_anchor())
-        return obs
+        return {
+            "agent_loc": self._agent_location,
+            "at_anchor": self._at_anchor(),
+            "last_anchor_loc": self._last_anchor,
+        }
 
     def _get_info(self):
         return {}
