@@ -108,12 +108,6 @@ if __name__ == '__main__':
         help='Configuration file to use.'
     )
     parser.add_argument(
-        '--env_name', 
-        type=str, 
-        default='discovery/Climbing-v0', 
-        help='Environment registered name.'
-    )
-    parser.add_argument(
         '--learner', 
         type=str, 
         default='PPO', 

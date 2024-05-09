@@ -1,7 +1,7 @@
 env_name: 'discovery/Climbing-v0'
 learner: 'PPO'
 project_name: 'testing_climber'
-timesteps: 30000
+timesteps: 100000
 policy_type: 'MultiInputPolicy'
 stats_window_size: 10
 
@@ -23,4 +23,5 @@ target_update_interval: 500 # 10000
 
 # Env Specific hypers
 height: 50
+anchor_interval: 10
 include_anchor_bit: True
