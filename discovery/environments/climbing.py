@@ -43,6 +43,7 @@ class ClimbingEnv(gym.Env):
         height: int = 8,
         anchor_interval: int = 4,
         randomized_actions: bool = False,
+        max_episode_length: int = 1000,
     ):
         """Construct the environment."""
         self._height = height
@@ -70,6 +71,9 @@ class ClimbingEnv(gym.Env):
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
+        self._max_episode_length = max_episode_length
+        self._current_step = 0
+
     def _at_anchor(self):
         return self._agent_location in self._anchor_locations
 
@@ -86,6 +90,7 @@ class ClimbingEnv(gym.Env):
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
+        self._current_step = 0
 
         if self._random_action_sequence is None and self._randomized_actions:
             # This way we randomize the actions only the first time we reset,
@@ -102,6 +107,7 @@ class ClimbingEnv(gym.Env):
         return observation, info
 
     def step(self, action):
+        self._current_step += 1
         if self._randomized_actions:
             action = self._random_action_sequence[action]
 
@@ -120,7 +126,12 @@ class ClimbingEnv(gym.Env):
         observation = self._get_obs()
         info = self._get_info()
 
-        return observation, reward, terminated, False, info
+        if self._current_step >= self._max_episode_length:
+            truncated = True
+        else:
+            truncated = False
+
+        return observation, reward, terminated, truncated, info
 
     def render(self):
         return self._render_ansi()
