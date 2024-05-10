@@ -56,6 +56,7 @@ class ClimbingEnv(gym.Env):
         anchor_interval: int = 4,
         randomized_actions: bool = False,
         max_episode_length: int = 1000,
+        include_rgb_obs: bool = False,
     ):
         """Construct the environment."""
         super().__init__()
@@ -67,6 +68,7 @@ class ClimbingEnv(gym.Env):
         self._agent_location = 0
         self._last_anchor = 0
         self._anchor_locations = np.arange(0, self._height, anchor_interval)[1:]
+        self._include_rgb_obs = include_rgb_obs
 
         # The observations are dictionaries with the agent's location and a bit
         # indicating whether the agent is by an anchor.
@@ -91,11 +93,14 @@ class ClimbingEnv(gym.Env):
         return self._agent_location in self._anchor_locations
 
     def _get_obs(self):
-        return {
+        obs = {
             "agent_loc": self._agent_location,
             "at_anchor": self._at_anchor(),
             "last_anchor_loc": self._last_anchor,
         }
+        if self._include_rgb_obs:
+            obs["rgb"] = self._render_rgb_frame()
+        return obs
 
     def _get_info(self):
         return {}
