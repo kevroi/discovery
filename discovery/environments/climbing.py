@@ -1,3 +1,4 @@
+import math
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -13,6 +14,17 @@ register(
 
 DEFAULT_UP_ACTION = 0
 DEFAULT_ANCHOR_ACTION = 1
+
+_TILE_PIXS = 32
+_AGENT_SIZE_PROP = 0.5
+colors = {
+    "red": (255, 0, 0),
+    "green": (0, 255, 0),
+    "blue": (0, 0, 255),
+    "white": (255, 255, 255),
+    "black": (0, 0, 0),
+    "gray": (128, 128, 128),
+}
 
 
 class ClimbingEnv(gym.Env):
@@ -35,7 +47,7 @@ class ClimbingEnv(gym.Env):
     TODO: should we have one more action?
     """
 
-    metadata = {"render_modes": ["ansi"]}
+    metadata = {"render_modes": ["ansi", "rgb_array"]}
 
     def __init__(
         self,
@@ -46,6 +58,7 @@ class ClimbingEnv(gym.Env):
         max_episode_length: int = 1000,
     ):
         """Construct the environment."""
+        super().__init__()
         self._height = height
         self._anchor_interval = anchor_interval
         self._randomized_actions = randomized_actions
@@ -89,7 +102,7 @@ class ClimbingEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
-        super().reset(seed=seed)
+        super().reset(seed=seed, options=options)
         self._current_step = 0
 
         if self._random_action_sequence is None and self._randomized_actions:
@@ -135,7 +148,27 @@ class ClimbingEnv(gym.Env):
         return observation, reward, terminated, truncated, info
 
     def render(self):
-        return self._render_ansi()
+        if self.render_mode == "rgb_array":
+            return self._render_rgb_frame()
+        elif self.render_mode == "ansi":
+            return self._render_ansi()
+
+    def _render_rgb_frame(self):
+        map = np.zeros((self._height * _TILE_PIXS, _TILE_PIXS, 3), dtype=np.uint8)
+        for anchor in self._anchor_locations:
+            c = colors["gray"] if anchor != self._last_anchor else colors["white"]
+            map[anchor * _TILE_PIXS : (anchor + 1) * _TILE_PIXS, 0:_TILE_PIXS] = c
+        a_loc_diff = math.floor((0.5 - 0.5 * _AGENT_SIZE_PROP) * _TILE_PIXS)
+        start_idx = self._agent_location * _TILE_PIXS + a_loc_diff
+        end_idx = (self._agent_location + 1) * _TILE_PIXS - a_loc_diff
+        # math.floor(
+        #     ( + 0.5 - 0.5 * _AGENT_SIZE_PROP) * _TILE_PIXS
+        # )
+        # end_idx = math.ceil(
+        #     (self._agent_location + 0.5 + 0.5 * _AGENT_SIZE_PROP) * _TILE_PIXS
+        # )
+        map[start_idx:end_idx, a_loc_diff : _TILE_PIXS - a_loc_diff] = colors["blue"]
+        return np.flipud(map)
 
     def _render_ansi(self):
         map = np.tile(".", [8, 2])
