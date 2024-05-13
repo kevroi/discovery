@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import gymnasium as gym
 from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, FullyObsWrapper
+from discovery.utils.wrappers import ImgWithHallwayObsWrapper
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import obs_as_tensor
 import matplotlib.pyplot as plt
@@ -15,27 +16,35 @@ def make_env(config):
         env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = FullyObsWrapper(env) # FullyObsWrapper runs faster locally, but uses ints instead of 256-bit RGB
         env = ImgObsWrapper(env)
+    
     elif config['env_name'] == "TwoRoomEnv":
         from discovery.environments.custom_minigrids import TwoRoomEnv
         gym.register(id="TwoRoomEnv", entry_point=TwoRoomEnv)
         env = gym.make(config['env_name'], render_mode=config['render_mode'], random_hallway=config['random_hallway'])
         env = FullyObsWrapper(env)
-        env = ImgObsWrapper(env)
+        if config['cnn'] == "minigrid_hallfeat":
+            env = ImgWithHallwayObsWrapper(env)
+        else:
+            env = ImgObsWrapper(env)
+    
     elif config['env_name'] == "FourRoomEnv":
         from discovery.environments.custom_minigrids import FourRoomEnv
         gym.register(id="FourRoomEnv", entry_point=FourRoomEnv)
         env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = FullyObsWrapper(env)
         env = ImgObsWrapper(env)
+    
     elif config['env_name'] == "discovery/Climbing-v0":
         from discovery.environments.climbing import ClimbingEnv
         gym.register(id="discovery/Climbing-v0", entry_point="discovery.environments.climbing:ClimbingEnv")
         env = gym.make(config['env_name'], height=config['height'], anchor_interval=config['anchor_interval'])
+    
     else:
         env = gym.make(config['env_name'], render_mode=config['render_mode'])
         env = RGBImgObsWrapper(env)
         env = ImgObsWrapper(env)
     env = Monitor(env)
+
     return env
 
 

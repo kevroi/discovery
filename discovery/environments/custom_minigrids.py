@@ -5,6 +5,7 @@ from minigrid.core.world_object import Door, Goal, Key, Wall
 from minigrid.manual_control import ManualControl
 from minigrid.minigrid_env import MiniGridEnv
 from minigrid.core.mission import MissionSpace
+from gymnasium import spaces
 from abc import abstractmethod
 import random
 
@@ -46,6 +47,8 @@ class TwoRoomEnv(MiniGridEnv):
             **kwargs,
         )
 
+        self.observation_space["at_hallway"] = spaces.Discrete(2)
+
     @staticmethod
     def _gen_mission():
         return "grand mission"
@@ -76,6 +79,18 @@ class TwoRoomEnv(MiniGridEnv):
             self.place_agent()
 
         self.mission = "two-room"
+
+    def gen_obs(self):
+        obs = super().gen_obs()
+        obs["at_hallway"] = self.agent_pos == self.hallway_pos
+        return obs
+    
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        observation = self.gen_obs()
+
+        return observation, {}
+
 
 class FourRoomEnv(MiniGridEnv):
     """

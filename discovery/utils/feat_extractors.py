@@ -58,6 +58,23 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
         return self.linear(self.cnn(observations))
     
 
+class FeaturesWithHallwayExtractor(MinigridFeaturesExtractor):
+    """Same as MinigridFeaturesExtractor but with an additional hallway feature.
+    The hallway feature is a 2D one hot encoding of whether the agent is in the hallway or not.
+    Note that this would require the agent to use a MultiInputPolicy, rather than a CnnPolicy.
+    """
+    def __init__(self, observation_space: gym.Space, env:gym.Env,
+                 features_dim: int = 512, normalized_image: bool = False, last_layer_activation="relu") -> None:
+        self.hallway_loc = env.hallway_pos[0]
+        super().__init__(observation_space, features_dim+2, normalized_image, last_layer_activation)
+
+    def forward(self, observations: dict) -> torch.Tensor:
+        breakpoint()
+        features = super().forward(observations)
+        hallway = self.hallway.unsqueeze(0).repeat(features.shape[0], 1)
+        return torch.cat((features, hallway), dim=1)
+
+
 class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
     def __init__(self, observation_space: gym.Space, env: gym.Env,
                  features_dim: int = 512, normalized_image: bool = False, last_layer_activation="relu") -> None:

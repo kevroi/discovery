@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 from discovery.agents.ddqn import DoubleDQN
-from discovery.utils.feat_extractors import MinigridFeaturesExtractor, SharedPrivateFeaturesExtractor, NatureCNN, MaskedCNNFeaturesExtractor
+from discovery.utils.feat_extractors import *
 import wandb
 from discovery.utils.activations import *
 from discovery.experiments.FeatAct_minigrid.helpers import make_env
@@ -76,6 +76,15 @@ def main(args):
                              sampling from a distribution of gridworlds")
         policy_kwargs = dict(
                             features_extractor_class=SharedPrivateFeaturesExtractor,
+                            features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim'],
+                                                            env=env.envs[0],
+                                                            last_layer_activation=hparam_yaml["activation"]),
+                            )
+    elif hparam_yaml["cnn"] == "minigrid_hallfeat":
+        if hparam_yaml["env_name"] != "TwoRoomEnv":
+            raise ValueError("Only the TwoRoomEnv supports FeaturesWithHallwayExtractor")
+        policy_kwargs = dict(
+                            features_extractor_class=FeaturesWithHallwayExtractor,
                             features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim'],
                                                             env=env.envs[0],
                                                             last_layer_activation=hparam_yaml["activation"]),
