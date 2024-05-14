@@ -47,12 +47,11 @@ class TwoRoomEnv(MiniGridEnv):
             max_steps=1000,
             **kwargs,
         )
-
         self.observation_space["at_hallway"] = spaces.Discrete(2)
 
     @staticmethod
     def _gen_mission():
-        return "grand mission"
+        return "two-room"
 
     # MiniGridEnv._gen_grid
     @abstractmethod
@@ -83,7 +82,7 @@ class TwoRoomEnv(MiniGridEnv):
 
     def gen_obs(self):
         obs = super().gen_obs()
-        obs["at_hallway"] = self.agent_pos == self.hallway_pos
+        obs["at_hallway"] = int(self.agent_pos == self.hallway_pos)
         return obs
 
     def reset(self, seed=None, options=None):
