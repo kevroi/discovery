@@ -52,7 +52,7 @@ class TwoRoomEnv(MiniGridEnv):
 
     @staticmethod
     def _gen_mission():
-        return "grand mission"
+        return "two-room"
 
     # MiniGridEnv._gen_grid
     @abstractmethod
