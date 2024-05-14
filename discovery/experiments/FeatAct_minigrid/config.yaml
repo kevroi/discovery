@@ -2,8 +2,8 @@ env_name: 'MiniGrid-DoorKey-5x5-v0'
 learner: 'DDQN'
 project_name: 'testing_shared_private'
 timesteps: 100000
-policy_type: 'CnnPolicy'
-cnn: 'minigrid' # 'nature', 'minigrid', 'minigrid_sp'
+policy_type: 'MultiInputPolicy'
+cnn: 'minigrid_hallfeat' # 'nature', 'minigrid', 'minigrid_sp', 'minigrid_hallfeat'
 activation: 'relu'
 feat_dim: 128
 stats_window_size: 10
