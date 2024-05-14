@@ -40,7 +40,7 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
         last_layer_activation="relu",
     ) -> None:
         super().__init__(observation_space, features_dim)
-        n_input_channels = observation_space.shape[0]
+        n_input_channels = observation_space["image"].shape[0]
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 16, (2, 2)),
             nn.ReLU(),
@@ -54,7 +54,7 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
         # Compute shape by doing one forward pass
         with torch.no_grad():
             n_flatten = self.cnn(
-                torch.as_tensor(observation_space.sample()[None]).float()
+                torch.as_tensor(observation_space["image"].sample()[None]).float()
             ).shape[1]
 
         if last_layer_activation == "relu":
@@ -83,21 +83,30 @@ class FeaturesWithHallwayExtractor(MinigridFeaturesExtractor):
     def __init__(
         self,
         observation_space: gym.Space,
-        env: gym.Env,
         features_dim: int = 512,
         normalized_image: bool = False,
         last_layer_activation="relu",
     ) -> None:
-        self.hallway_loc = env.hallway_pos[0]
         super().__init__(
-            observation_space, features_dim + 2, normalized_image, last_layer_activation
+            observation_space,
+            features_dim - 2,
+            normalized_image,
+            last_layer_activation,
         )
 
     def forward(self, observations: dict) -> torch.Tensor:
-        breakpoint()
-        features = super().forward(observations)
-        hallway = self.hallway.unsqueeze(0).repeat(features.shape[0], 1)
-        return torch.cat((features, hallway), dim=1)
+        features = super().forward(observations["image"])
+        if len(observations["at_hallway"].shape) == 3:
+            hallway = observations["at_hallway"].squeeze(1)
+        else:
+            assert len(observations["at_hallway"].shape) == 2
+            hallway = observations["at_hallway"]
+        outcome = torch.cat((features, hallway), dim=-1)
+        return outcome
+
+    @property
+    def features_dim(self) -> int:
+        return self._features_dim + 2  # Add 2 for the hallway feature.
 
 
 class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):

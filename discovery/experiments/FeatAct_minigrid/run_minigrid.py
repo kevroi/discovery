@@ -102,7 +102,6 @@ def main(args):
             features_extractor_class=FeaturesWithHallwayExtractor,
             features_extractor_kwargs=dict(
                 features_dim=hparam_yaml["feat_dim"],
-                env=env.envs[0],
                 last_layer_activation=hparam_yaml["activation"],
             ),
         )
