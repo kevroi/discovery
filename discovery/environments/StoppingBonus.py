@@ -10,7 +10,9 @@ class StoppingBonusWrapper(VecEnvWrapper):
     def __init__(self, venv, agent, target_feature, reward_bonus):
         VecEnvWrapper.__init__(self, venv)
         self.agent = agent
-        self.target_feature = target_feature # load this from experiments training CNN alongside PPO/DDQN
+        self.target_feature = (
+            target_feature  # load this from experiments training CNN alongside PPO/DDQN
+        )
         self.reward_bonus = reward_bonus
         self.epsilon_closeness = 0.1
 

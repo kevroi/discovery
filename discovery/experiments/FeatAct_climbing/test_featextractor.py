@@ -13,16 +13,15 @@ env = gym.make(env_id)
 n_envs = 1
 
 # Wrap the environment in a VecEnv
-env = DummyVecEnv([lambda: gym.make(env_id)]*n_envs)
+env = DummyVecEnv([lambda: gym.make(env_id)] * n_envs)
 
 policy_kwargs = dict(
-                    features_extractor_class=ClimbingFeatureExtractor,
-                    features_extractor_kwargs=dict(),
-                    )
+    features_extractor_class=ClimbingFeatureExtractor,
+    features_extractor_kwargs=dict(),
+)
 
 # Create the PPO agent
 agent = PPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 # x = agent.policy.extract_features(observation)
 # Train the agent
 agent.learn(total_timesteps=10000)
-

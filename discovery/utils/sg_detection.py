@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 class LinearClassifier(nn.Module):
     def __init__(self, input_size):
         super(LinearClassifier, self).__init__()
@@ -10,6 +11,7 @@ class LinearClassifier(nn.Module):
         x = self.fc(x)
         x = self.sigmoid(x)
         return x
+
 
 class NonLinearClassifier(nn.Module):
     def __init__(self, input_size, hidden_size):

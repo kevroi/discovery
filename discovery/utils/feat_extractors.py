@@ -9,17 +9,22 @@ from stable_baselines3.common.preprocessing import is_image_space
 
 from discovery.utils.activations import CReLU, FTA
 
+
 class ClimbingFeatureExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.Space, include_anchor_bit: bool = False):
         self.include_anchor_bit = include_anchor_bit
         total_features_dim = observation_space["agent_loc"].n
         if self.include_anchor_bit:
             total_features_dim += 2
-        super(ClimbingFeatureExtractor, self).__init__(observation_space, features_dim=total_features_dim)
+        super(ClimbingFeatureExtractor, self).__init__(
+            observation_space, features_dim=total_features_dim
+        )
 
     def forward(self, observations):
         if self.include_anchor_bit:
-            features = torch.cat((observations["agent_loc"], observations["at_anchor"]), dim=-1)
+            features = torch.cat(
+                (observations["agent_loc"], observations["at_anchor"]), dim=-1
+            )
         else:
             features = torch.tensor(observations["agent_loc"], dtype=torch.float32)
         return features
@@ -27,8 +32,13 @@ class ClimbingFeatureExtractor(BaseFeaturesExtractor):
 
 # CNN from MiniGrid Documentation
 class MinigridFeaturesExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space: gym.Space, features_dim: int = 512,
-                 normalized_image: bool = False, last_layer_activation="relu") -> None:
+    def __init__(
+        self,
+        observation_space: gym.Space,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+        last_layer_activation="relu",
+    ) -> None:
         super().__init__(observation_space, features_dim)
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
@@ -43,30 +53,45 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
 
         # Compute shape by doing one forward pass
         with torch.no_grad():
-            n_flatten = self.cnn(torch.as_tensor(observation_space.sample()[None]).float()).shape[1]
+            n_flatten = self.cnn(
+                torch.as_tensor(observation_space.sample()[None]).float()
+            ).shape[1]
 
         if last_layer_activation == "relu":
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
         elif last_layer_activation == "crelu":
-            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//2), CReLU())
+            self.linear = nn.Sequential(
+                nn.Linear(n_flatten, features_dim // 2), CReLU()
+            )
         elif last_layer_activation == "fta":
-            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//20), FTA())
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim // 20), FTA())
         elif last_layer_activation == "lrelu":
-            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.LeakyReLU())
+            self.linear = nn.Sequential(
+                nn.Linear(n_flatten, features_dim), nn.LeakyReLU()
+            )
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
-    
+
 
 class FeaturesWithHallwayExtractor(MinigridFeaturesExtractor):
     """Same as MinigridFeaturesExtractor but with an additional hallway feature.
     The hallway feature is a 2D one hot encoding of whether the agent is in the hallway or not.
     Note that this would require the agent to use a MultiInputPolicy, rather than a CnnPolicy.
     """
-    def __init__(self, observation_space: gym.Space, env:gym.Env,
-                 features_dim: int = 512, normalized_image: bool = False, last_layer_activation="relu") -> None:
+
+    def __init__(
+        self,
+        observation_space: gym.Space,
+        env: gym.Env,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+        last_layer_activation="relu",
+    ) -> None:
         self.hallway_loc = env.hallway_pos[0]
-        super().__init__(observation_space, features_dim+2, normalized_image, last_layer_activation)
+        super().__init__(
+            observation_space, features_dim + 2, normalized_image, last_layer_activation
+        )
 
     def forward(self, observations: dict) -> torch.Tensor:
         breakpoint()
@@ -76,95 +101,124 @@ class FeaturesWithHallwayExtractor(MinigridFeaturesExtractor):
 
 
 class SharedPrivateFeaturesExtractor(MinigridFeaturesExtractor):
-    def __init__(self, observation_space: gym.Space, env: gym.Env,
-                 features_dim: int = 512, normalized_image: bool = False, last_layer_activation="relu") -> None:
+    def __init__(
+        self,
+        observation_space: gym.Space,
+        env: gym.Env,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+        last_layer_activation="relu",
+    ) -> None:
         self.env = env
         self.private_feat_dim = 4
-        self.num_shared = features_dim-self.private_feat_dim
+        self.num_shared = features_dim - self.private_feat_dim
         self.num_variants = env.num_variants
-        self.private_feat_vecs = [torch.rand(self.private_feat_dim) for i in range(self.num_variants)]
+        self.private_feat_vecs = [
+            torch.rand(self.private_feat_dim) for i in range(self.num_variants)
+        ]
         for priv_vec in self.private_feat_vecs:
             priv_vec.requires_grad = True
-        super().__init__(observation_space, features_dim, normalized_image, last_layer_activation)
+        super().__init__(
+            observation_space, features_dim, normalized_image, last_layer_activation
+        )
 
     # def forward(self, observations: torch.Tensor) -> torch.Tensor:
     #     features = super().forward(observations)
     #     variant_idx = self.env.variant_idx  # Assuming env has a variant_idx attribute
 
-        # split the features into shared and private
-        # shared_features = features[:, :self.num_shared]
-        # private_features = features[:, self.num_shared:]
+    # split the features into shared and private
+    # shared_features = features[:, :self.num_shared]
+    # private_features = features[:, self.num_shared:]
 
-        # features.register_hook(lambda x: self.modify_grad(x, [variant_idx]))
+    # features.register_hook(lambda x: self.modify_grad(x, [variant_idx]))
 
-        # # detach the private features
-        # for i in range(self.num_variants):
-        #     if i == variant_idx:
-        #         private_to_use = private_features[:, i]
-        #     else:
-        #         # private_features[:, i] = 0.0  # Zero out the private features
-        #         masked_privates = torch.zeros_like(private_features[:, i])
+    # # detach the private features
+    # for i in range(self.num_variants):
+    #     if i == variant_idx:
+    #         private_to_use = private_features[:, i]
+    #     else:
+    #         # private_features[:, i] = 0.0  # Zero out the private features
+    #         masked_privates = torch.zeros_like(private_features[:, i])
 
-        # # unsplit the features
-        # features = torch.cat([shared_features, private_to_use.unsqueeze(1).detach(), ], dim=1)
+    # # unsplit the features
+    # features = torch.cat([shared_features, private_to_use.unsqueeze(1).detach(), ], dim=1)
 
-        
-        # for i in range(self.num_variants):
-        #     if i == variant_idx and not features[:, self.num_shared+i].requires_grad:
-        #         features[:, self.num_shared+i].detach.requires_grad_()  # Reattach the ith variant
-        #     else:
-        #         features[:, self.num_shared+i] = features[:, self.num_shared+i].detach()
+    # for i in range(self.num_variants):
+    #     if i == variant_idx and not features[:, self.num_shared+i].requires_grad:
+    #         features[:, self.num_shared+i].detach.requires_grad_()  # Reattach the ith variant
+    #     else:
+    #         features[:, self.num_shared+i] = features[:, self.num_shared+i].detach()
 
-        # # set private features to zero
-        # self.set_mask(variant_idx)
-        # features = features * self.mask.to(features.device)
-        # top = features[:, :self.num_shared+variant_idx-1]
-        # middle = features[:, self.num_shared+variant_idx-1].detach().unsqueeze(1)
-        # if variant_idx == self.num_variants:
-        #     features = torch.cat([top, middle], dim=1)
-        # else:
-        #     bottom = features[:, self.num_shared+variant_idx:]
-        #     features = torch.cat([top, middle, bottom], dim=1)
+    # # set private features to zero
+    # self.set_mask(variant_idx)
+    # features = features * self.mask.to(features.device)
+    # top = features[:, :self.num_shared+variant_idx-1]
+    # middle = features[:, self.num_shared+variant_idx-1].detach().unsqueeze(1)
+    # if variant_idx == self.num_variants:
+    #     features = torch.cat([top, middle], dim=1)
+    # else:
+    #     bottom = features[:, self.num_shared+variant_idx:]
+    #     features = torch.cat([top, middle, bottom], dim=1)
 
-        # return features
+    # return features
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         features = super().forward(observations)
-        features = features[:, :-self.private_feat_dim]
-        
+        features = features[:, : -self.private_feat_dim]
+
         variant_idx = self.env.variant_idx
-        sp_feats = torch.cat((features, self.private_feat_vecs[variant_idx-1].repeat(features.shape[0], 1)),
-                             dim=1)
+        sp_feats = torch.cat(
+            (
+                features,
+                self.private_feat_vecs[variant_idx - 1].repeat(features.shape[0], 1),
+            ),
+            dim=1,
+        )
         print("variant idx:", variant_idx)
         # if variant_idx == 3:
-        print("priv feat vec 1:", self.private_feat_vecs[variant_idx-1])
-        print("priv feat grad", self.private_feat_vecs[variant_idx-1].grad)
+        print("priv feat vec 1:", self.private_feat_vecs[variant_idx - 1])
+        print("priv feat grad", self.private_feat_vecs[variant_idx - 1].grad)
         return sp_feats
 
     def modify_grad(self, x, inds):
         x[inds] = 0
         return x
-    
+
     def set_mask(self, variant_idx):
         mask = torch.zeros(self.num_shared + self.num_variants)
-        mask[:self.num_shared] = 1
-        mask[self.num_shared+variant_idx-1] = 1 # -1 because variant_idx is 1-indexed
+        mask[: self.num_shared] = 1
+        mask[self.num_shared + variant_idx - 1] = (
+            1  # -1 because variant_idx is 1-indexed
+        )
         self.mask = mask
-    
+
 
 class MaskedCNNFeaturesExtractor(MinigridFeaturesExtractor):
-    def __init__(self, observation_space: gym.Space, env: gym.Env,
-                 features_dim: int = 512, normalized_image: bool = False, last_layer_activation="relu") -> None:
+    def __init__(
+        self,
+        observation_space: gym.Space,
+        env: gym.Env,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+        last_layer_activation="relu",
+    ) -> None:
         self.env = env
         self.num_shared = features_dim
         self.num_variants = env.num_variants
         self.mask = None
-        super().__init__(observation_space, features_dim+self.num_variants, normalized_image, last_layer_activation)
+        super().__init__(
+            observation_space,
+            features_dim + self.num_variants,
+            normalized_image,
+            last_layer_activation,
+        )
 
     def set_mask(self, variant_idx):
         mask = torch.zeros(self.num_shared + self.num_variants)
-        mask[:self.num_shared] = 1
-        mask[self.num_shared+variant_idx-1] = 1 # -1 because variant_idx is 1-indexed
+        mask[: self.num_shared] = 1
+        mask[self.num_shared + variant_idx - 1] = (
+            1  # -1 because variant_idx is 1-indexed
+        )
         self.mask = mask
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
@@ -207,7 +261,6 @@ class MaskedCNNFeaturesExtractor(MinigridFeaturesExtractor):
     #         self.mask = self.mask.detach().clone().requires_grad_(True)
 
 
-        
 # CNN from DQN Nature paper
 class NatureCNN(BaseFeaturesExtractor):
     """
@@ -239,7 +292,9 @@ class NatureCNN(BaseFeaturesExtractor):
         super().__init__(observation_space, features_dim)
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
-        assert is_image_space(observation_space, check_channels=False, normalized_image=normalized_image), (
+        assert is_image_space(
+            observation_space, check_channels=False, normalized_image=normalized_image
+        ), (
             "You should use NatureCNN "
             f"only with images not with {observation_space}\n"
             "(you are probably using `CnnPolicy` instead of `MlpPolicy` or `MultiInputPolicy`)\n"
@@ -263,16 +318,22 @@ class NatureCNN(BaseFeaturesExtractor):
 
         # Compute shape by doing one forward pass
         with torch.no_grad():
-            n_flatten = self.cnn(torch.as_tensor(observation_space.sample()[None]).float()).shape[1]
+            n_flatten = self.cnn(
+                torch.as_tensor(observation_space.sample()[None]).float()
+            ).shape[1]
 
         if last_layer_activation == "relu":
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
         elif last_layer_activation == "crelu":
-            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//2), CReLU())
+            self.linear = nn.Sequential(
+                nn.Linear(n_flatten, features_dim // 2), CReLU()
+            )
         elif last_layer_activation == "fta":
-            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim//20), FTA())
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim // 20), FTA())
         elif last_layer_activation == "lrelu":
-            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.LeakyReLU())
+            self.linear = nn.Sequential(
+                nn.Linear(n_flatten, features_dim), nn.LeakyReLU()
+            )
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))

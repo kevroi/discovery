@@ -2,20 +2,23 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+
 class CReLU(nn.Module):
-    """Concatenated ReLU activation function, as defined in 
+    """Concatenated ReLU activation function, as defined in
     the continual loss of plasticity paper.
     """
+
     def __init__(self):
         super(CReLU, self).__init__()
 
     def forward(self, x):
         concatenated = torch.cat((F.relu(x), F.relu(-x)), 1)
         return concatenated
-    
+
 
 class Abs(nn.Module):
     """Absolute value activation function"""
+
     def __init__(self):
         super(Abs, self).__init__()
 
@@ -38,7 +41,9 @@ class FTA(nn.Module):
         super().__init__()
         # Initialize tiling vector
         # $$\mathbf{c} = (l, l + \delta, l + 2 \delta, \dots, u - 2 \delta, u - \delta)$$
-        self.c = nn.Parameter(torch.arange(lower_limit, upper_limit, delta), requires_grad=False)
+        self.c = nn.Parameter(
+            torch.arange(lower_limit, upper_limit, delta), requires_grad=False
+        )
         # The input vector expands by a factor equal to the number of bins $\frac{u - l}{\delta}$
         self.expansion_factor = len(self.c)
         # $\delta$
@@ -59,7 +64,10 @@ class FTA(nn.Module):
         z = z.view(*z.shape, 1)
 
         # $$\phi_\eta(z) = 1 - I_{\eta,+} \big( \max(\mathbf{c} - z, 0) + \max(z - \delta - \mathbf{c}, 0) \big)$$
-        z = 1. - self.fuzzy_i_plus(torch.clip(self.c - z, min=0.) + torch.clip(z - self.delta - self.c, min=0.))
+        z = 1.0 - self.fuzzy_i_plus(
+            torch.clip(self.c - z, min=0.0)
+            + torch.clip(z - self.delta - self.c, min=0.0)
+        )
 
         # Reshape back to original number of dimensions.
         # The last dimension size gets expanded by the number of bins, $\frac{u - l}{\delta}$.

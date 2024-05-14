@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class RLGlue(object):
 
     def __init__(self, env_instance, agent_instance):
@@ -44,16 +45,15 @@ class RLGlue(object):
             dictionary with keys {reward,state,action,isTerminal}
         """
         result = self.environment.step(self.last_action)
-        self.total_reward += result['reward']
-        if result['isTerminal'] is True:
+        self.total_reward += result["reward"]
+        if result["isTerminal"] is True:
             self.num_episodes += 1
-            self.agent.end(result['reward'])
-            result['action'] = None
+            self.agent.end(result["reward"])
+            result["action"] = None
         else:
             self.num_steps += 1
-            self.last_action = self.agent.step(result['reward'],
-                                               result['state'])
-            result['action'] = self.last_action
+            self.last_action = self.agent.step(result["reward"], result["state"])
+            result["action"] = self.last_action
         return result
 
     def episode(self, max_steps_this_episode):
@@ -69,11 +69,11 @@ class RLGlue(object):
         is_terminal = False
 
         self.start()
-        while (not is_terminal) and \
-                ((max_steps_this_episode == 0) or
-                 (self.num_steps < max_steps_this_episode)):
+        while (not is_terminal) and (
+            (max_steps_this_episode == 0) or (self.num_steps < max_steps_this_episode)
+        ):
             rl_step_result = self.step()
-            is_terminal = rl_step_result['isTerminal']
+            is_terminal = rl_step_result["isTerminal"]
 
         return is_terminal
 

@@ -4,7 +4,12 @@ import pickle
 import copy
 
 import utils.rlglue as rlglue
-from environments.environment import ToyEnvironment, GridEnvironment, I_MazeEnvironment, phi1Environment
+from environments.environment import (
+    ToyEnvironment,
+    GridEnvironment,
+    I_MazeEnvironment,
+    phi1Environment,
+)
 from agents.QLearning import QAgent
 from agents.QLearning import OptionExploreQAgent
 from eigenoptions.options import Options
@@ -13,9 +18,9 @@ from eigenoptions.options import Options
 # explore_env = environment.GridEnvironment()
 # explore_env = I_MazeEnvironment()
 # explore_env = ToyEnvironment('2room')
-explore_env = phi1Environment('2room')
+explore_env = phi1Environment("2room")
 
-max_row, max_col = explore_env.get_grid_dimension() # get dimension of the environment
+max_row, max_col = explore_env.get_grid_dimension()  # get dimension of the environment
 explore_agent = OptionExploreQAgent(max_row=max_row, max_col=max_col)
 explore_agent.set_alpha(0.1)
 explore_agent.set_discount(0.9)
@@ -26,9 +31,9 @@ explore_glue = rlglue.RLGlue(explore_env, explore_agent)
 # reward_env = environment.GridEnvironment()
 # reward_env = I_MazeEnvironment()
 # reward_env = ToyEnvironment('2room')
-reward_env = phi1Environment('2room')
+reward_env = phi1Environment("2room")
 
-max_row, max_col = reward_env.get_grid_dimension() # get dimension of the environment
+max_row, max_col = reward_env.get_grid_dimension()  # get dimension of the environment
 reward_agent = QAgent(max_row=max_row, max_col=max_col)
 reward_agent.set_alpha(0.1)
 reward_agent.set_epsilon(0.0)
@@ -39,7 +44,7 @@ reward_glue = rlglue.RLGlue(reward_env, reward_agent)
 # opt_env = I_MazeEnvironment()
 # opt_env = environment.RoomEnvironment()
 # opt_env = ToyEnvironment('2room')
-opt_env = phi1Environment('2room')
+opt_env = phi1Environment("2room")
 opt = Options(opt_env, alpha=0.1, epsilon=1.0, discount=0.9)
 
 # Experiment
@@ -52,21 +57,21 @@ num_options = 256
 
 # Starting from the agent with primitive actions, we incrementally add options
 # in explore_agent
-results = np.zeros((num_options+1, num_episodes))
+results = np.zeros((num_options + 1, num_episodes))
 
 current_num_options = 0
 for i in [0]:
-    print('Explore Agent with ' + str(i) + ' options...')
+    print("Explore Agent with " + str(i) + " options...")
     # add option
     while current_num_options < i:
         eigenoption = opt.learn_next_eigenoption(100000)
         # display or save newest learned option
-	# opt.display_eigenoption(display=False,
+        # opt.display_eigenoption(display=False,
         #                        savename='option'+str(i)+'.png', idx=i-1)
         current_num_options += 1
         # Not adding options which terminate in all states
         if np.all(eigenoption == 4):
-            #print "Not adding {}".format(current_num_options - 1)
+            # print "Not adding {}".format(current_num_options - 1)
             continue
         explore_agent.add_eigenoption(eigenoption)
     cum_reward = np.zeros(num_episodes)
@@ -82,7 +87,9 @@ for i in [0]:
         explore_glue.cleanup_run()
     cum_reward /= float(num_runs)
     results[i] = cum_reward
-np.save(f'experiments/average_return/data_files/{reward_env.name}_average_return', results)
+np.save(
+    f"experiments/average_return/data_files/{reward_env.name}_average_return", results
+)
 
 
 # visualisation

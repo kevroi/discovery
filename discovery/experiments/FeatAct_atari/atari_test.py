@@ -3,6 +3,7 @@ from stable_baselines3.common.vec_env import VecFrameStack
 from stable_baselines3 import PPO
 import gymnasium as gym
 import wandb
+
 print("modules loaded")
 
 # There already exists an environment generator

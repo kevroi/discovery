@@ -2,21 +2,21 @@ import numpy as np
 import pickle
 
 # Default actions in GridWorld environments
-default_action_set = [(1,0), (-1,0), (0,-1), (0,1)] # R, L, D, U
+default_action_set = [(1, 0), (-1, 0), (0, -1), (0, 1)]  # R, L, D, U
 
-TERMINATE_ACTION = (0,0)
+TERMINATE_ACTION = (0, 0)
+
 
 class QAgent(object):
 
     def __init__(self, max_row, max_col):
         self.action_set = default_action_set
         self.option_set = []
-        self.default_max_actions = len(self.action_set) # will stay fixed
-        self.max_actions = len(self.action_set) # can increase
+        self.default_max_actions = len(self.action_set)  # will stay fixed
+        self.max_actions = len(self.action_set)  # can increase
 
         self.Q = np.zeros((max_row, max_col, self.default_max_actions))
-        self.states_rc = [(r, c) for r in range(max_row)
-                          for c in range(max_col)]
+        self.states_rc = [(r, c) for r in range(max_row) for c in range(max_col)]
 
         self.last_state, self.last_action = -1, -1
         self.steps = 0
@@ -28,7 +28,7 @@ class QAgent(object):
         # Getting the cartesian form of the states
         row, col = self.states_rc[state[0]]
         # set policy
-        ca = self.epsilongreedy(row,col)
+        ca = self.epsilongreedy(row, col)
         action = self.action_set[ca]
         self.last_action = ca
         # Updating steps
@@ -52,18 +52,17 @@ class QAgent(object):
         la = self.last_action
 
         # Update Q value
-        target = reward + (self.discount)*(self.Q[crow][ccol].max())
+        target = reward + (self.discount) * (self.Q[crow][ccol].max())
         # Update: New Estimate = Old Estimate + StepSize[Target - Old Estimate]
-        self.Q[lrow][lcol][la] += self.alpha*(target - self.Q[lrow][lcol][la])
+        self.Q[lrow][lcol][la] += self.alpha * (target - self.Q[lrow][lcol][la])
 
         # Choose action
-        ca = self.epsilongreedy(crow,ccol)
+        ca = self.epsilongreedy(crow, ccol)
         action = self.action_set[ca]
         self.last_state = self.states_rc.index(current_state)
         self.last_action = ca
         self.steps += 1
         return self.last_action
-
 
     def end(self, reward):
         """
@@ -75,7 +74,7 @@ class QAgent(object):
         # We know that the agent has transitioned in the terminal state
         # for which all action values are 0
         target = reward + 0
-        self.Q[lrow][lcol][la] += self.alpha*(target - self.Q[lrow][lcol][la])
+        self.Q[lrow][lcol][la] += self.alpha * (target - self.Q[lrow][lcol][la])
         # Resetting last_state and last_action for the next episode
         self.last_state, self.last_action = -1, -1
         return
@@ -116,8 +115,8 @@ class QAgent(object):
         self.action_set.append(TERMINATE_ACTION)
         self.default_max_actions = len(self.action_set)
         self.max_actions = len(self.action_set)
-        self.Q = np.zeros((self.max_row, self.max_col,
-                           self.default_max_actions))
+        self.Q = np.zeros((self.max_row, self.max_col, self.default_max_actions))
+
     def get_Q(self):
         return self.Q
 
@@ -125,14 +124,21 @@ class QAgent(object):
         self.Q = Q
 
     def get_policy(self):
-        pi = np.zeros((len(self.states_rc,)), dtype=int)
+        pi = np.zeros(
+            (
+                len(
+                    self.states_rc,
+                )
+            ),
+            dtype=int,
+        )
 
         for idx, state in enumerate(self.states_rc):
             row, col = state[0], state[1]
             q = self.Q[row][col]
             # Taking last max to break ties inorder to prefer Terminate action
             ca = np.flatnonzero(q == q.max())[-1]
-            pi[idx] = ca # each state will have related optimal action idx
+            pi[idx] = ca  # each state will have related optimal action idx
 
         return pi
 
@@ -140,11 +146,12 @@ class QAgent(object):
         print("Invalid agent message: " + in_message)
         exit()
 
+
 class QAgent_phi(QAgent):
     def __init__(self, max_row, max_col, phi_sg):
         super().__init__(max_row, max_col)
-        self.phi_sg = phi_sg # all the states aggreated along with the subgoal
-    
+        self.phi_sg = phi_sg  # all the states aggreated along with the subgoal
+
     def step(self, reward, state):
         """
         Arguments: reward: floting point, state: integer
@@ -166,12 +173,12 @@ class QAgent_phi(QAgent):
         la = self.last_action
 
         # Update Q value
-        target = reward + (self.discount)*(self.Q[crow][ccol].max())
+        target = reward + (self.discount) * (self.Q[crow][ccol].max())
         # Update: New Estimate = Old Estimate + StepSize[Target - Old Estimate]
-        self.Q[lrow][lcol][la] += self.alpha*(target - self.Q[lrow][lcol][la])
+        self.Q[lrow][lcol][la] += self.alpha * (target - self.Q[lrow][lcol][la])
 
         # Choose action
-        ca = self.epsilongreedy(crow,ccol)
+        ca = self.epsilongreedy(crow, ccol)
         action = self.action_set[ca]
         self.last_state = self.states_rc.index(current_state)
         self.last_action = ca
@@ -192,21 +199,18 @@ class OptionExploreQAgent(object):
         """
         self.action_set = default_action_set
         self.option_set = []
-        self.default_max_actions = len(self.action_set) # will stay fixed
-        self.max_actions = len(self.action_set) # can increase
+        self.default_max_actions = len(self.action_set)  # will stay fixed
+        self.max_actions = len(self.action_set)  # can increase
 
         self.Q = np.zeros((max_row, max_col, self.default_max_actions))
-        self.states_rc = [(r, c) for r in range(max_row)
-                          for c in range(max_col)]
+        self.states_rc = [(r, c) for r in range(max_row) for c in range(max_col)]
 
         self.last_state, self.last_action = -1, -1
         self.steps = 0
         self.max_row, self.max_col = max_row, max_col
 
-
         self.is_following_option = False
         self.option_number = -1
-
 
     def start(self, state):
         # Saving the state as last_state
@@ -235,7 +239,7 @@ class OptionExploreQAgent(object):
         ca = self.option_set[self.option_number][state[0]]
 
         # Resample action if the option wants to terminate
-        while ca == 4: 
+        while ca == 4:
             self.is_following_option = False
             self.option_number = -1
 
@@ -261,9 +265,8 @@ class OptionExploreQAgent(object):
         self.last_action = ca
         self.steps = 1
         return self.last_action
-                
 
-    def step(self, reward, state):        
+    def step(self, reward, state):
         """
         Arguments: reward: floting point, state: integer
         Returns: action: list with two integers [row, col]
@@ -280,9 +283,9 @@ class OptionExploreQAgent(object):
         la = self.last_action
 
         # Update Q value
-        target = reward + (self.discount)*(self.Q[crow][ccol].max())
+        target = reward + (self.discount) * (self.Q[crow][ccol].max())
         # Update: New Estimate = Old Estimate + StepSize[Target - Old Estimate]
-        self.Q[lrow][lcol][la] += self.alpha*(target - self.Q[lrow][lcol][la])
+        self.Q[lrow][lcol][la] += self.alpha * (target - self.Q[lrow][lcol][la])
 
         # Choose action
         # not following option
@@ -303,19 +306,19 @@ class OptionExploreQAgent(object):
                 self.last_state = self.states_rc.index(current_state)
                 self.last_action = ca
                 self.steps += 1
-                return self.last_action 
+                return self.last_action
 
         # following option
-        assert (self.is_following_option is True)
+        assert self.is_following_option is True
 
         ca = self.option_set[self.option_number][state[0]]
 
         # if terminate action
-        while ca == 4: 
+        while ca == 4:
             self.is_following_option = False
             self.option_number = -1
 
-             # set policy
+            # set policy
             ca = np.random.randint(self.max_actions)
 
             # if chosen action is an option
@@ -330,16 +333,14 @@ class OptionExploreQAgent(object):
                 self.last_state = self.states_rc.index(current_state)
                 self.last_action = ca
                 self.steps += 1
-                return self.last_action 
-
+                return self.last_action
 
         # not terminate action
         action = self.action_set[ca]
         self.last_state = self.states_rc.index(current_state)
         self.last_action = ca
         self.steps += 1
-        return self.last_action 
-
+        return self.last_action
 
     def end(self, reward):
         """
@@ -351,7 +352,7 @@ class OptionExploreQAgent(object):
         # We know that the agent has transitioned in the terminal state
         # for which all action values are 0
         target = reward + 0
-        self.Q[lrow][lcol][la] += self.alpha*(target - self.Q[lrow][lcol][la])
+        self.Q[lrow][lcol][la] += self.alpha * (target - self.Q[lrow][lcol][la])
         # Resetting last_state and last_action for the next episode
         self.last_state, self.last_action = -1, -1
         return
@@ -382,8 +383,8 @@ class OptionExploreQAgent(object):
         self.action_set.append(TERMINATE_ACTION)
         self.default_max_actions = len(self.action_set)
         self.max_actions = len(self.action_set)
-        self.Q = np.zeros((self.max_row, self.max_col,
-                           self.default_max_actions))
+        self.Q = np.zeros((self.max_row, self.max_col, self.default_max_actions))
+
     def get_Q(self):
         return self.Q
 
@@ -391,15 +392,22 @@ class OptionExploreQAgent(object):
         self.Q = Q
 
     def get_policy(self):
-        pi = np.zeros((len(self.states_rc,)), dtype=np.int)
+        pi = np.zeros(
+            (
+                len(
+                    self.states_rc,
+                )
+            ),
+            dtype=np.int,
+        )
 
         for idx, state in enumerate(self.states_rc):
             row, col = state[0], state[1]
             q = self.Q[row][col]
             # Taking last max to break ties inorder to prefer Terminate action
             ca = np.flatnonzero(q == q.max())[-1]
-            pi[idx] = ca # each state will have related optimal action idx
-	    
+            pi[idx] = ca  # each state will have related optimal action idx
+
         return pi
 
     def add_eigenoption(self, eigenoption):

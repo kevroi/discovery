@@ -27,7 +27,7 @@
 #                 next_actions_online = torch.argmax(next_q_values_online, dim=1, keepdim=True)
 #                 # Estimate the q-values for the selected actions using target q network
 #                 next_q_values = torch.gather(next_q_values_target, dim=1, index=next_actions_online)
-               
+
 #                 # 1-step TD target
 #                 target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
@@ -44,7 +44,7 @@
 #             loss = F.smooth_l1_loss(current_q_values, target_q_values)
 
 #             ### END OF YOUR CODE
-            
+
 #             losses.append(loss.item())
 
 #             # Optimize the q-network
@@ -59,6 +59,7 @@
 
 #         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
 #         self.logger.record("train/loss", np.mean(losses))
+
 
 def foo():
     print("Training DQN on MiniGrid with 64 features.")

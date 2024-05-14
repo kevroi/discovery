@@ -15,17 +15,18 @@ def createFolder(directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
     except OSError:
-        print ('Error: Creating directory. ' +  directory)
+        print("Error: Creating directory. " + directory)
+
 
 np.set_printoptions(precision=2)
 
 
-save_dir = './option_archive'
+save_dir = "./option_archive"
 num_options = 242
 
 explore_env = environment.GridEnvironment()
 
-max_row, max_col = explore_env.get_grid_dimension() # get dimension of the environment
+max_row, max_col = explore_env.get_grid_dimension()  # get dimension of the environment
 explore_agent = agents.OptionExploreQAgent(max_row=max_row, max_col=max_col)
 
 explore_agent.set_alpha(0.1)
@@ -39,12 +40,12 @@ opt = options.Options(explore_env, alpha=0.1, epsilon=1.0, discount=0.9)
 createFolder(save_dir)
 
 for idx in range(num_options):
-    print("==== learning option: "+str(idx) + " ====")
+    print("==== learning option: " + str(idx) + " ====")
     eigenoption = opt.learn_next_eigenoption(100000)
     if np.all(eigenoption == 4):
         continue
-    savename = save_dir+'/option{}.txt'.format(idx)
-    np.savetxt(savename, np.array(eigenoption), fmt='%d')
+    savename = save_dir + "/option{}.txt".format(idx)
+    np.savetxt(savename, np.array(eigenoption), fmt="%d")
     # display or save newest learned option
-    savename = save_dir+'/option{}.png'.format(idx)
+    savename = save_dir + "/option{}.png".format(idx)
     opt.display_eigenoption(display=False, savename=savename, idx=idx)

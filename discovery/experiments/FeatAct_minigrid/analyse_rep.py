@@ -12,9 +12,10 @@ import wandb
 Functions to analyse the representations learned by the agent.
 """
 
+
 def get_obs(env, see_obs=False):
     print(env.get_attr("spec")[0].id)
-    if env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-5x5-v0':
+    if env.get_attr("spec")[0].id == "MiniGrid-DoorKey-5x5-v0":
         # # Vector Action Encoding:
         # 0 = left
         # 1 = right
@@ -23,21 +24,21 @@ def get_obs(env, see_obs=False):
         # 5 = activate an object (open door, press button)
 
         obs_list = []
-        obs = env.reset() # initial observation
+        obs = env.reset()  # initial observation
         obs_list.append(obs)
         # # move to the hallway
         obs, _, _, _ = env.step([1])
-        obs_list.append(obs)# before picking up key
+        obs_list.append(obs)  # before picking up key
         obs, _, _, _ = env.step([3])
-        obs_list.append(obs)# after picking up key
+        obs_list.append(obs)  # after picking up key
         obs, _, _, _ = env.step([2])
         obs_list.append(obs)
         obs, _, _, _ = env.step([2])
         obs_list.append(obs)
         obs, _, _, _ = env.step([1])
-        obs_list.append(obs)# before opening door
+        obs_list.append(obs)  # before opening door
         obs, _, _, _ = env.step([5])
-        obs_list.append(obs)# after opening door
+        obs_list.append(obs)  # after opening door
         obs, _, _, _ = env.step([2])
         obs_list.append(obs)
         obs, _, _, _ = env.step([2])
@@ -45,7 +46,7 @@ def get_obs(env, see_obs=False):
         obs, _, _, _ = env.step([1])
         obs_list.append(obs)
         obs, _, _, _ = env.step([2])
-        obs_list.append(obs)# before reaching goal
+        obs_list.append(obs)  # before reaching goal
 
         # TODO: modify this to take snapshots of the environment at different points in time
         # if see_obs:
@@ -53,8 +54,8 @@ def get_obs(env, see_obs=False):
         # plt.figure()
         # plt.imshow(np.concatenate([img], 1)) # shows the full environment
         # plt.savefig("../../plots/domains/DoorKey_5x5.pdf", dpi=300)
-    
-    elif env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-8x8-v0':
+
+    elif env.get_attr("spec")[0].id == "MiniGrid-DoorKey-8x8-v0":
         obs_list = []
         obs = env.reset()
         action_seq = [2, 0, 3, 2, 0, 2, 2, 2, 1, 5, 2, 2, 1, 2, 2, 2]
@@ -63,25 +64,25 @@ def get_obs(env, see_obs=False):
             obs_list.append(obs)
     else:
         raise ValueError(f"Analysis not implemented for {env.get_attr('spec')[0].id}.")
-    
+
     return obs_list
 
+
 def get_bad_obs(env):
-    if env.get_attr("spec")[0].id == 'MiniGrid-DoorKey-5x5-v0':
+    if env.get_attr("spec")[0].id == "MiniGrid-DoorKey-5x5-v0":
         obs_list = []
         obs = env.reset()
         obs_list.append(obs)
 
-        action_seq = [1, 3, 2, 2, 1, 5, 2, 2, 1, 2,
-                        1, 1, 2, 0, 2, 2, 0, 2, 2]
-        
+        action_seq = [1, 3, 2, 2, 1, 5, 2, 2, 1, 2, 1, 1, 2, 0, 2, 2, 0, 2, 2]
+
         # # move to the hallway
         for a in action_seq:
             obs, _, _, _ = env.step([a])
             obs_list.append(obs)
     else:
         raise ValueError(f"Analysis not implemented for {env.get_attr('spec')[0].id}.")
-    
+
     return obs_list
 
 
@@ -102,31 +103,51 @@ def get_feats(model, config, see_bad_obs=False):
     feature_activations = torch.cat(feature_activations, dim=0)
     cos_sim_matrix = cosine_similarity_matrix(feature_activations)
 
-    if config['use_wandb']:
+    if config["use_wandb"]:
         images = wandb.Image(feature_activations, caption="Feature Activations")
         wandb.log({"Feat_act": images})
         for i, index in enumerate(get_subgoal_index(config)):
             phi_subgoal = feature_activations[index]
             for j, phi in enumerate(feature_activations):
-                wandb.log({f"Cosine Similarity with phi_subgoal_{i}": cos_sim_matrix[index, j]})
+                wandb.log(
+                    {
+                        f"Cosine Similarity with phi_subgoal_{i}": cos_sim_matrix[
+                            index, j
+                        ]
+                    }
+                )
         labels = [f"phi(o_{i})" for i in range(len(obs_list))]
-        wandb.log({"CosSim": wandb.plots.HeatMap(labels, labels, cos_sim_matrix, show_text=False)})
+        wandb.log(
+            {
+                "CosSim": wandb.plots.HeatMap(
+                    labels, labels, cos_sim_matrix, show_text=False
+                )
+            }
+        )
 
     # save the cosine similarity matrix
-    save_path  = f"experiments/FeatAct_minigrid/cos_sim_matrices"
+    save_path = f"experiments/FeatAct_minigrid/cos_sim_matrices"
     check_directory(save_path)
-    np.save(save_path +f"/{config['learner']}_{config['env_name']}_{config['feat_dim']}feats_{str(config['run_num'])}.npy", cos_sim_matrix.numpy())
+    np.save(
+        save_path
+        + f"/{config['learner']}_{config['env_name']}_{config['feat_dim']}feats_{str(config['run_num'])}.npy",
+        cos_sim_matrix.numpy(),
+    )
 
     return feature_activations
 
+
 def see_feats(feature_activations):
     plt.figure()
-    plt.imshow(feature_activations, cmap='hot', interpolation='nearest')
+    plt.imshow(feature_activations, cmap="hot", interpolation="nearest")
     plt.colorbar()
     plt.show()
 
+
 def save_feats(feature_activations, config):
-    save_path  = f"experiments/FeatAct_minigrid/feat_acts/feature_activations"
-    np.save(save_path +f"_{config['env_name']}.npy", feature_activations.numpy()) # TODO: should add a timestamp/hash to the filename
-    with zipfile.ZipFile('array.zip', 'w') as zipf:
-        zipf.write('array.npy')
+    save_path = f"experiments/FeatAct_minigrid/feat_acts/feature_activations"
+    np.save(
+        save_path + f"_{config['env_name']}.npy", feature_activations.numpy()
+    )  # TODO: should add a timestamp/hash to the filename
+    with zipfile.ZipFile("array.zip", "w") as zipf:
+        zipf.write("array.npy")

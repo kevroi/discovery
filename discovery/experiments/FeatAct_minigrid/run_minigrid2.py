@@ -9,12 +9,17 @@
 
 # from agents.ddqn import DoubleDQN
 
-import os; print(os.getcwd())
+import os
+
+print(os.getcwd())
 print("-------")
-import sys; print(sys.path)
+import sys
+
+print(sys.path)
 
 from agents.ppo import PPO
 import foo
+
 # from foo import DoubleDQN
 # DoubleDQN.
 # from cnn import MinigridFeaturesExtractor, NatureCNN
@@ -30,7 +35,7 @@ import foo
 #     for k, v in vars(args).items():
 #         if v is not None:
 #             hparam_yaml[k] = v
-    
+
 #     # # Set random seed
 #     # np.random.seed(hparam_yaml['seed'])   # TODO: Check if this is the best way to set the seed
 #     # random.seed(hparam_yaml['seed'])
@@ -38,9 +43,9 @@ import foo
 #     # Setup logger if using wandb
 #     if hparam_yaml['use_wandb']:
 #         run = wandb.init(
-#             project=hparam_yaml['project_name'], 
+#             project=hparam_yaml['project_name'],
 #             config=hparam_yaml,
-#             sync_tensorboard=True, 
+#             sync_tensorboard=True,
 #             monitor_gym=True,
 #             save_code=True,
 #             )
@@ -49,11 +54,11 @@ import foo
 #     else:
 #         run = None
 #         run_id = 'debug'
-    
+
 #     # Create environment
 #     if hparam_yaml["env_name"] == "TwoRoomEnv" and hparam_yaml["cnn"] == "nature":
 #         raise ValueError("TwoRoomEnv does not support NatureCNN. Use MinigridFeaturesExtractor instead.")
-    
+
 #     env = DummyVecEnv([lambda: make_env(config=hparam_yaml)]*hparam_yaml['n_envs'])
 #     if hparam_yaml['record_video']:
 #         env = VecVideoRecorder(
@@ -62,13 +67,13 @@ import foo
 #                                 record_video_trigger=lambda x: x % 100000 == 0,
 #                                 video_length=200,
 #                             )
-    
+
 #     # Create agent
 #     if hparam_yaml["activation"] == "crelu" and hparam_yaml["feat_dim"] % 2 != 0:
 #         raise ValueError("CReLU activation requires even number of features.")
 #     if hparam_yaml["activation"] == "fta" and hparam_yaml["feat_dim"] % 20 != 0:
 #         raise ValueError("FTA activation requires number of features to be a multiple of 20.")
-        
+
 #     if hparam_yaml["cnn"] == "nature":
 #         policy_kwargs = dict(
 #                             features_extractor_class=NatureCNN,
@@ -81,7 +86,7 @@ import foo
 #                             features_extractor_kwargs=dict(features_dim=hparam_yaml['feat_dim'],
 #                                                             last_layer_activation=hparam_yaml["activation"]),
 #                             )
-    
+
 #     if hparam_yaml["learner"] == "PPO":
 #         model = PPO(hparam_yaml["policy_type"], env,
 #                 learning_rate=hparam_yaml["lr"],
@@ -113,7 +118,7 @@ import foo
 #                 target_update_interval=hparam_yaml["target_update_interval"],
 #                 policy_kwargs=policy_kwargs,
 #                 verbose=1, tensorboard_log=f"runs/{run_id}")
-    
+
 #     print(f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features.")
 #     model.learn(total_timesteps=hparam_yaml["timesteps"])
 #     model.save(f"experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}")
@@ -122,7 +127,7 @@ import foo
 #         from analyse_rep import get_feats
 #         feature_activations = get_feats(model, hparam_yaml)
 #         # feature_activations = get_feats(model, hparam_yaml, see_bad_obs=True) # Uncomment to analyse bad observations too
-        
+
 
 # if __name__ == '__main__':
 
@@ -132,48 +137,48 @@ import foo
 #     # The config file and things we want to sweep over (overwriting the config file)
 #     # CAREFUL: These default args also overwrite the config file
 #     parser.add_argument(
-#         '--config_file', 
-#         type=str, 
+#         '--config_file',
+#         type=str,
 #         default= 'config.yaml',
 #         help='Configuration file to use.'
 #     )
 #     parser.add_argument(
-#         '--env_name', 
-#         type=str, 
-#         default='MiniGrid-Empty-5x5-v0', 
+#         '--env_name',
+#         type=str,
+#         default='MiniGrid-Empty-5x5-v0',
 #         help='Minigrid environment official name.'
 #     )
 #     parser.add_argument(
-#         '--learner', 
-#         type=str, 
-#         default='PPO', 
+#         '--learner',
+#         type=str,
+#         default='PPO',
 #         help='Learning algorithm used.'
 #     )
 #     parser.add_argument(
-#         '--feat_dim', 
-#         type=int, 
-#         default=128, 
+#         '--feat_dim',
+#         type=int,
+#         default=128,
 #         help='Dimension of feature space.'
 #     )
 #     parser.add_argument(
-#         '--lr', 
-#         type=float, 
-#         default=3e-4, 
+#         '--lr',
+#         type=float,
+#         default=3e-4,
 #         help='Learning rate of the Adam optimizer used to optimise surrogate loss.'
 #     )
 #     parser.add_argument(
-#         '--run_num', 
+#         '--run_num',
 #         type=int,
 #         default=-1,
 #         help='Number of the run for multirun experiments.'
 #     )
 #     parser.add_argument(
-#         '--analyse_rep', 
+#         '--analyse_rep',
 #         action='store_true', # set to false if we do not pass this argument
 #         help='Raise the flag to analyse feature vector.'
 #     )
 #     parser.add_argument(
-#         '--use_wandb', 
+#         '--use_wandb',
 #         action='store_true', # set to false if we do not pass this argument
 #         help='Raise the flag to use wandb.'
 #     )

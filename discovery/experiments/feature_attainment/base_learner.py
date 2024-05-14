@@ -10,18 +10,20 @@ from agents.TD_lambda import TDLambdaAgent
 from agents.Sarsa_lmbda import SarsaLmbdaAgent
 from eigenoptions.options import Options
 
+
 def see_action_values(Q):
-    action_set = ['→', '←', '↓', '↑']
+    action_set = ["→", "←", "↓", "↑"]
     print(np.round(np.max(Q, axis=2), decimals=1))
     actions = np.argmax(Q, axis=2)
     opt_acts = np.zeros(actions.shape, dtype=str)
     for i in range(actions.shape[0]):
         for j in range(actions.shape[1]):
-            opt_acts[i,j] = action_set[actions[i,j]]
+            opt_acts[i, j] = action_set[actions[i, j]]
     print(opt_acts)
 
+
 # env = GridEnvironment()
-env = ToyEnvironment('2room_lava')
+env = ToyEnvironment("2room_lava")
 max_row, max_col = env.get_grid_dimension()
 
 # Figure 2 Agent
@@ -49,5 +51,7 @@ for run in tqdm(range(num_runs)):
     glue.cleanup_run()
 cum_reward /= float(num_runs)
 
-np.save(f'experiments/feature_attainment/data_files/{env.name}_{agent.name}_average_return', cum_reward)
-
+np.save(
+    f"experiments/feature_attainment/data_files/{env.name}_{agent.name}_average_return",
+    cum_reward,
+)

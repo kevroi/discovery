@@ -1,15 +1,34 @@
 from agents.ppo import PPO
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder, VecTransposeImage
-from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
+from stable_baselines3.common.vec_env import (
+    DummyVecEnv,
+    VecVideoRecorder,
+    VecTransposeImage,
+)
+from stable_baselines3.common.vec_env.util import (
+    copy_obs_dict,
+    dict_to_obs,
+    obs_space_info,
+)
 from stable_baselines3.common.env_util import make_vec_env
 import minigrid
-from minigrid.wrappers import ImgObsWrapper, RGBImgObsWrapper, RGBImgPartialObsWrapper, FullyObsWrapper
+from minigrid.wrappers import (
+    ImgObsWrapper,
+    RGBImgObsWrapper,
+    RGBImgPartialObsWrapper,
+    FullyObsWrapper,
+)
 import gymnasium as gym
 import wandb
 from wandb.integration.sb3 import WandbCallback
 from discovery.utils.feat_extractors import MinigridFeaturesExtractor
-from discovery.experiments.feat_att_minigrid.n_room_env import TwoRoomEnv, FourRoomEnv, FourRoomChainEnv, SixRoomChainEnv
+from discovery.experiments.feat_att_minigrid.n_room_env import (
+    TwoRoomEnv,
+    FourRoomEnv,
+    FourRoomChainEnv,
+    SixRoomChainEnv,
+)
+
 print("all loaded")
 
 config = {
@@ -17,30 +36,30 @@ config = {
     "total_timesteps": 1e5,
     # "env_name": "DiscoveryEnvs/MGFourRoomChainEnv-v0",
     "env_name": "MiniGrid-Empty-8x8-v0",
-    "feat_dim":128,
-    "fully_obs":True,
-    "random_starts":True,
-    "random_goal":False,
+    "feat_dim": 128,
+    "fully_obs": True,
+    "random_starts": True,
+    "random_goal": False,
     "goal_set": [(24, 6), (18, 6), (11, 6), (4, 6)],
-    "n_envs":1,
+    "n_envs": 1,
 }
 
 # Register your Gym Env
-myEnv_id = 'DiscoveryEnvs/MGFourRoomChainEnv-v0' # It is best practice to have a space name and version number.
+myEnv_id = "DiscoveryEnvs/MGFourRoomChainEnv-v0"  # It is best practice to have a space name and version number.
 gym.envs.registration.register(
     id=myEnv_id,
     entry_point=FourRoomChainEnv,
-    max_episode_steps=1e6, # Customize to your needs.
-    reward_threshold=1 # Customize to your needs.
+    max_episode_steps=1e6,  # Customize to your needs.
+    reward_threshold=1,  # Customize to your needs.
 )
 
 run = wandb.init(
-                project="PPO_on_MiniGrid",
-                config=config,
-                sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
-                monitor_gym=True,  # auto-upload the videos of agents playing the game
-                save_code=True,  # optional
-                )
+    project="PPO_on_MiniGrid",
+    config=config,
+    sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+    monitor_gym=True,  # auto-upload the videos of agents playing the game
+    save_code=True,  # optional
+)
 
 policy_kwargs = dict(
     features_extractor_class=MinigridFeaturesExtractor,
@@ -54,6 +73,7 @@ policy_kwargs = dict(
 #     env = ImgObsWrapper(env)
 #     env = Monitor(env)
 #     return env
+
 
 def make_env(config=config):
     # env = FourRoomChainEnv(render_mode="rgb_array",
@@ -92,26 +112,32 @@ def make_env(config=config):
 
     # return VecTransposeImage(env)
 
-env = DummyVecEnv([make_env]*config["n_envs"])
+
+env = DummyVecEnv([make_env] * config["n_envs"])
 # env = make_env()
 
 env = VecVideoRecorder(
-                        env,
-                        f"videos/{run.id}",
-                        record_video_trigger=lambda x: x % 100000 == 0,
-                        video_length=200,
-                    )
+    env,
+    f"videos/{run.id}",
+    record_video_trigger=lambda x: x % 100000 == 0,
+    video_length=200,
+)
 
-model = PPO(config["policy_type"], env, policy_kwargs=policy_kwargs,
-            verbose=1, tensorboard_log=f"runs/{run.id}")
+model = PPO(
+    config["policy_type"],
+    env,
+    policy_kwargs=policy_kwargs,
+    verbose=1,
+    tensorboard_log=f"runs/{run.id}",
+)
 model.learn(
-            total_timesteps=config["total_timesteps"],
-            callback=WandbCallback(
-                gradient_save_freq=100,
-                model_save_path=f"models/{run.id}",
-                verbose=2,
-                ),
-            )
+    total_timesteps=config["total_timesteps"],
+    callback=WandbCallback(
+        gradient_save_freq=100,
+        model_save_path=f"models/{run.id}",
+        verbose=2,
+    ),
+)
 run.finish()
 
 

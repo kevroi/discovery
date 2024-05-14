@@ -15,6 +15,7 @@ from minigrid.core.constants import (
 
 from stable_baselines3.common.vec_env.util import obs_space_info
 
+
 class TwoRoomEnv(MiniGridEnv):
     def __init__(
         self,
@@ -22,8 +23,8 @@ class TwoRoomEnv(MiniGridEnv):
         height=8,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
-        hallway_pos=(3,7),
-        random_hallway=False, # if True, hallway position is randomly generated (we uniformly sample from a distribution of TwoRoomEnvs)
+        hallway_pos=(3, 7),
+        random_hallway=False,  # if True, hallway position is randomly generated (we uniformly sample from a distribution of TwoRoomEnvs)
         max_steps: int = None,
         **kwargs,
     ):
@@ -35,9 +36,9 @@ class TwoRoomEnv(MiniGridEnv):
         mission_space = MissionSpace(mission_func=self._gen_mission)
         # Randomly place hallway
         if self.random_hallway:
-            self.hallway_pos = (random.randint(1, height-2), self.hallway_pos[1])
-            self.num_variants = height-2 # number of different TwoRoomEnvs
-            self.variant_idx = self.hallway_pos[0] # index of the current TwoRoomEnv
+            self.hallway_pos = (random.randint(1, height - 2), self.hallway_pos[1])
+            self.num_variants = height - 2  # number of different TwoRoomEnvs
+            self.variant_idx = self.hallway_pos[0]  # index of the current TwoRoomEnv
 
         super().__init__(
             mission_space=mission_space,
@@ -52,7 +53,7 @@ class TwoRoomEnv(MiniGridEnv):
     @staticmethod
     def _gen_mission():
         return "grand mission"
-    
+
     # MiniGridEnv._gen_grid
     @abstractmethod
     def _gen_grid(self, width, height):
@@ -65,7 +66,7 @@ class TwoRoomEnv(MiniGridEnv):
         for i in range(0, self.hallway_pos[0]):
             self.grid.set(self.hallway_pos[1], i, Wall())
 
-        for i in range(self.hallway_pos[0]+1, height):
+        for i in range(self.hallway_pos[0] + 1, height):
             self.grid.set(self.hallway_pos[1], i, Wall())
 
         # Place a goal square in the bottom-right corner
@@ -84,7 +85,7 @@ class TwoRoomEnv(MiniGridEnv):
         obs = super().gen_obs()
         obs["at_hallway"] = self.agent_pos == self.hallway_pos
         return obs
-    
+
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         observation = self.gen_obs()
@@ -96,13 +97,14 @@ class FourRoomEnv(MiniGridEnv):
     """
     Asymmetric 4-room environment.
     """
+
     def __init__(
         self,
         width=13,
         height=13,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
-        hallway_pos=[(3,6), (6, 2), (7, 9), (10, 6)],
+        hallway_pos=[(3, 6), (6, 2), (7, 9), (10, 6)],
         max_steps: int = None,
         **kwargs,
     ):
@@ -123,7 +125,7 @@ class FourRoomEnv(MiniGridEnv):
     @staticmethod
     def _gen_mission():
         return "grand mission"
-    
+
     # MiniGridEnv._gen_grid
     @abstractmethod
     def _gen_grid(self, width, height):
@@ -146,7 +148,7 @@ class FourRoomEnv(MiniGridEnv):
         # Generate horizontal separation wall
         for i in range(1, 2):
             self.grid.set(i, 6, Wall())
-        
+
         for i in range(3, 6):
             self.grid.set(i, 6, Wall())
 
@@ -178,13 +180,13 @@ class FourRoomChainEnv(MiniGridEnv):
         random_goal=False,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
-        hallway_pos=[(3,7), (5,14), (1,21), (4,28), (3,35)],
+        hallway_pos=[(3, 7), (5, 14), (1, 21), (4, 28), (3, 35)],
         # goal_set = [(1,1), (1,6), (27, 1), (27, 6)], # four corners - only used if random_goal is True
-        goal_set = [(24, 6), (4, 6)],
+        goal_set=[(24, 6), (4, 6)],
         max_steps: int = None,
         **kwargs,
     ):
-        
+
         if random_starts:
             self.agent_start_pos = None
         else:
@@ -193,7 +195,7 @@ class FourRoomChainEnv(MiniGridEnv):
         self.hallway_pos = hallway_pos
         self.random_goal = random_goal
         self.goal_set = goal_set
-        random.seed(0) # seed for goal positions
+        random.seed(0)  # seed for goal positions
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
 
@@ -208,7 +210,7 @@ class FourRoomChainEnv(MiniGridEnv):
     @staticmethod
     def _gen_mission():
         return "grand mission"
-    
+
     # MiniGridEnv._gen_grid
     @abstractmethod
     def _gen_grid(self, width, height):
@@ -221,19 +223,18 @@ class FourRoomChainEnv(MiniGridEnv):
         # Generate verical separation wall
         for i in range(0, self.hallway_pos[0][0]):
             self.grid.set(self.hallway_pos[0][1], i, Wall())
-        for i in range(self.hallway_pos[0][0]+1, height):
+        for i in range(self.hallway_pos[0][0] + 1, height):
             self.grid.set(self.hallway_pos[0][1], i, Wall())
 
         for i in range(0, self.hallway_pos[1][0]):
             self.grid.set(self.hallway_pos[1][1], i, Wall())
-        for i in range(self.hallway_pos[1][0]+1, height):
+        for i in range(self.hallway_pos[1][0] + 1, height):
             self.grid.set(self.hallway_pos[1][1], i, Wall())
 
         for i in range(0, self.hallway_pos[2][0]):
             self.grid.set(self.hallway_pos[2][1], i, Wall())
-        for i in range(self.hallway_pos[2][0]+1, height):
+        for i in range(self.hallway_pos[2][0] + 1, height):
             self.grid.set(self.hallway_pos[2][1], i, Wall())
-        
 
         # Place a goal square in the bottom-right corner
         if self.random_goal:
@@ -259,7 +260,7 @@ class SixRoomChainEnv(MiniGridEnv):
         height=8,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
-        hallway_pos=[(3,7), (5,14), (1,21), (4,28), (3,35)],
+        hallway_pos=[(3, 7), (5, 14), (1, 21), (4, 28), (3, 35)],
         max_steps: int = None,
         **kwargs,
     ):
@@ -280,7 +281,7 @@ class SixRoomChainEnv(MiniGridEnv):
     @staticmethod
     def _gen_mission():
         return "grand mission"
-    
+
     # MiniGridEnv._gen_grid
     @abstractmethod
     def _gen_grid(self, width, height):
@@ -293,29 +294,28 @@ class SixRoomChainEnv(MiniGridEnv):
         # Generate verical separation wall
         for i in range(0, self.hallway_pos[0][0]):
             self.grid.set(self.hallway_pos[0][1], i, Wall())
-        for i in range(self.hallway_pos[0][0]+1, height):
+        for i in range(self.hallway_pos[0][0] + 1, height):
             self.grid.set(self.hallway_pos[0][1], i, Wall())
 
         for i in range(0, self.hallway_pos[1][0]):
             self.grid.set(self.hallway_pos[1][1], i, Wall())
-        for i in range(self.hallway_pos[1][0]+1, height):
+        for i in range(self.hallway_pos[1][0] + 1, height):
             self.grid.set(self.hallway_pos[1][1], i, Wall())
 
         for i in range(0, self.hallway_pos[2][0]):
             self.grid.set(self.hallway_pos[2][1], i, Wall())
-        for i in range(self.hallway_pos[2][0]+1, height):
+        for i in range(self.hallway_pos[2][0] + 1, height):
             self.grid.set(self.hallway_pos[2][1], i, Wall())
 
         for i in range(0, self.hallway_pos[3][0]):
             self.grid.set(self.hallway_pos[3][1], i, Wall())
-        for i in range(self.hallway_pos[3][0]+1, height):
+        for i in range(self.hallway_pos[3][0] + 1, height):
             self.grid.set(self.hallway_pos[3][1], i, Wall())
 
         for i in range(0, self.hallway_pos[4][0]):
             self.grid.set(self.hallway_pos[4][1], i, Wall())
-        for i in range(self.hallway_pos[4][0]+1, height):
+        for i in range(self.hallway_pos[4][0] + 1, height):
             self.grid.set(self.hallway_pos[4][1], i, Wall())
-        
 
         # Place a goal square in the bottom-right corner
         self.put_obj(Goal(), width - 2, height - 2)
@@ -328,6 +328,7 @@ class SixRoomChainEnv(MiniGridEnv):
             self.place_agent()
 
         self.mission = "6-room-chain"
+
 
 def main():
     # gym.register(id="FourRoomChainEnv", entry_point=FourRoomChainEnv)
@@ -368,6 +369,6 @@ def main():
     manual_control = ManualControl(env, seed=42)
     manual_control.start()
 
-    
+
 if __name__ == "__main__":
     main()

@@ -9,4 +9,3 @@ import os
 from stable_baselines3 import PPO
 from discovery.utils.feat_extractors import MinigridFeaturesExtractor, NatureCNN
 from stable_baselines3.common.utils import obs_as_tensor
-

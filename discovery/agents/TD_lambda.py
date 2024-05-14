@@ -2,9 +2,10 @@ import numpy as np
 import pickle
 
 # Default actions in GridWorld environments
-default_action_set = [(1,0), (-1,0), (0,-1), (0,1)] # R, L, D, U
+default_action_set = [(1, 0), (-1, 0), (0, -1), (0, 1)]  # R, L, D, U
 
-TERMINATE_ACTION = (0,0)
+TERMINATE_ACTION = (0, 0)
+
 
 class TDLambdaAgent(object):
     """
@@ -14,13 +15,12 @@ class TDLambdaAgent(object):
     def __init__(self, max_row, max_col):
         self.action_set = default_action_set
         self.option_set = []
-        self.default_max_actions = len(self.action_set) # will stay fixed
-        self.max_actions = len(self.action_set) # can increase
+        self.default_max_actions = len(self.action_set)  # will stay fixed
+        self.max_actions = len(self.action_set)  # can increase
 
         self.V = np.zeros((max_row, max_col))
         self.e = np.zeros((max_row, max_col))
-        self.states_rc = [(r, c) for r in range(max_row)
-                          for c in range(max_col)]
+        self.states_rc = [(r, c) for r in range(max_row) for c in range(max_col)]
         self.last_state, self.last_action = -1, -1
         self.steps = 0
         self.max_row, self.max_col = max_row, max_col
@@ -31,7 +31,7 @@ class TDLambdaAgent(object):
         # Getting the cartesian form of the states
         row, col = self.states_rc[state[0]]
         # set policy
-        ca = self.random_uniform(row,col)
+        ca = self.random_uniform(row, col)
         action = self.action_set[ca]
         self.last_action = ca
         # Updating steps
@@ -56,19 +56,19 @@ class TDLambdaAgent(object):
 
         # UWT Procedure
         rho = 1.0
-        if current_state in self.subgoals: # beta = 1
+        if current_state in self.subgoals:  # beta = 1
             target = reward + self.get_stopping_bonus(current_state)
             delta = target - self.V[lrow][lcol]
-            self.e[current_state] += 1 # add the gradient (replacing trace)
-            self.e *= rho # IS ratio
-            self.V += self.alpha*delta*self.e
-        else: # beta = 0
-            target = reward + (self.discount)*(self.V[crow][ccol])
+            self.e[current_state] += 1  # add the gradient (replacing trace)
+            self.e *= rho  # IS ratio
+            self.V += self.alpha * delta * self.e
+        else:  # beta = 0
+            target = reward + (self.discount) * (self.V[crow][ccol])
             delta = target - self.V[lrow][lcol]
-            self.e[current_state] += 1 # add the gradient (replacing trace)
-            self.e *= rho # IS ratio
-            self.V += self.alpha*delta*self.e
-            self.e *= self.discount*self.lmbda
+            self.e[current_state] += 1  # add the gradient (replacing trace)
+            self.e *= rho  # IS ratio
+            self.V += self.alpha * delta * self.e
+            self.e *= self.discount * self.lmbda
 
         # delta = target - self.V[lrow][lcol]
         # self.UWT(self.V, self.e, current_state, self.alpha, delta, rho, self.discount, self.lmbda)
@@ -79,13 +79,12 @@ class TDLambdaAgent(object):
         # self.V[lrow][lcol] += self.alpha*(target - self.V[lrow][lcol])
 
         # Choose action
-        ca = self.random_uniform(crow,ccol)
+        ca = self.random_uniform(crow, ccol)
         action = self.action_set[ca]
         self.last_state = self.states_rc.index(current_state)
         self.last_action = ca
         self.steps += 1
         return self.last_action
-
 
     def end(self, reward):
         """
@@ -97,11 +96,11 @@ class TDLambdaAgent(object):
         # We know that the agent has transitioned in the terminal state
         # for which all action values are 0
         target = reward + 0
-        self.V[lrow][lcol] += self.alpha*(target - self.V[lrow][lcol])
+        self.V[lrow][lcol] += self.alpha * (target - self.V[lrow][lcol])
         # Resetting last_state and last_action for the next episode
         self.last_state, self.last_action = -1, -1
         return
-    
+
     # def UWT(self, current_state, reward, delta):
     #     lrow, lcol = self.states_rc[self.last_state]
     #     e[current_state] += 1 # add the gradient (replacing trace)
@@ -115,7 +114,7 @@ class TDLambdaAgent(object):
         self.last_state, self.last_action = -1, -1
         self.steps = 0
         return
-    
+
     def random_uniform(self, row, col):
         ca = np.random.randint(self.max_actions)
         return ca
