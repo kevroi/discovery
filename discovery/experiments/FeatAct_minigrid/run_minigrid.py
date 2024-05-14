@@ -96,7 +96,8 @@ def main(args):
     elif hparam_yaml["cnn"] == "minigrid_hallfeat":
         if hparam_yaml["env_name"] != "TwoRoomEnv":
             raise ValueError(
-                "Only the TwoRoomEnv supports FeaturesWithHallwayExtractor"
+                "Only the TwoRoomEnv supports FeaturesWithHallwayExtractor. "
+                f"Got {hparam_yaml['env_name']}."
             )
         policy_kwargs = dict(
             features_extractor_class=FeaturesWithHallwayExtractor,
@@ -210,6 +211,7 @@ if __name__ == "__main__":
         "--env_name",
         type=str,
         default="MiniGrid-Empty-5x5-v0",
+        # default="TwoRoomEnv",
         help="Minigrid environment official name.",
     )
     parser.add_argument(
