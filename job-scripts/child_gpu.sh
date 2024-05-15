@@ -14,9 +14,12 @@
 
 echo $LEARNER, $ENV_NAME, $FEAT_DIM, $LR, $RUN
 
-module load python/3.9
+module load python/3.10
 source venv/bin/activate
 wandb login
 
 # python $me/discovery/discovery/experiments/FeatAct_atari/run_atari.py --env_name=$ENV_NAME --lr=$LR --use_wandb
-python $me/discovery/discovery/experiments/FeatAct_minigrid/run_minigrid.py --env_name=$ENV_NAME --learner=$LEARNER --feat_dim=$FEAT_DIM --lr=$LR --run_num=$RUN --analyse_rep --use_wandb
+python $me/discovery/discovery/experiments/FeatAct_minigrid/run_minigrid.py \
+    --env_name=$ENV_NAME --learner=$LEARNER \
+    --feat_dim=$FEAT_DIM --lr=$LR --run_num=$RUN \
+    --analyse_rep --use_wandb

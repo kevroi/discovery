@@ -10,8 +10,9 @@
 
 echo $LEARNER, $ENV_NAME, $LR
 
-module load python/3.9
+module load python/3.10
 source venv/bin/activate
 wandb login
 
-python $me/discovery/discovery/experiments/FeatAct_minigrid/run_minigrid.py --env_name=$ENV_NAME --learner=$LEARNER --lr=$LR --use_wandb
+python $me/discovery/discovery/experiments/FeatAct_minigrid/run_minigrid.py \
+    --env_name=$ENV_NAME --learner=$LEARNER --lr=$LR --use_wandb

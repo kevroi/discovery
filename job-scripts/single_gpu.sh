@@ -11,7 +11,7 @@
 #SBATCH -o /home/roice/scratch/discovery/logs/%x.out
 #SBATCH -e /home/roice/scratch/discovery/logs/%x.err
 
-module load python/3.9
+module load python/3.10
 source venv/bin/activate
 pip list
 wandb login
