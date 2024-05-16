@@ -6,7 +6,10 @@ from argparse import ArgumentParser
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 from discovery.agents.ddqn import DoubleDQN
-from discovery.utils.feat_extractors import ClimbingFeatureExtractor
+from discovery.utils.feat_extractors import (
+    ClimbingFeatureExtractor,
+    MinigridFeaturesExtractor,
+)
 import wandb
 from discovery.utils.activations import *
 from discovery.experiments.FeatAct_minigrid.helpers import make_env
@@ -44,12 +47,20 @@ def main(args):
     env = DummyVecEnv([lambda: make_env(config=hparam_yaml)] * hparam_yaml["n_envs"])
 
     # Create agent
-    policy_kwargs = dict(
-        features_extractor_class=ClimbingFeatureExtractor,
-        features_extractor_kwargs=dict(
-            include_anchor_bit=hparam_yaml["include_anchor_bit"]
-        ),
-    )
+    if hparam_yaml["feat_extractor"] == "tabular":
+        policy_kwargs = dict(
+            features_extractor_class=ClimbingFeatureExtractor,
+            features_extractor_kwargs=dict(
+                include_anchor_bit=hparam_yaml["include_anchor_bit"]
+            ),
+        )
+    elif hparam_yaml["feat_extractor"] == "cnn":
+        policy_kwargs = dict(
+            features_extractor_class=MinigridFeaturesExtractor,
+            features_extractor_kwargs=dict(
+                features_dim=8,
+            ),
+        )
 
     if hparam_yaml["learner"] == "PPO":
         model = PPO(

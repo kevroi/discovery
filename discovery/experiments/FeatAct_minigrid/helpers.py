@@ -51,11 +51,20 @@ def make_env(config):
             id="discovery/Climbing-v0",
             entry_point="discovery.environments.climbing:ClimbingEnv",
         )
-        env = gym.make(
-            config["env_name"],
-            height=config["height"],
-            anchor_interval=config["anchor_interval"],
-        )
+        if config["feat_extractor"] == "cnn":
+            env = gym.make(
+                config["env_name"],
+                height=config["height"],
+                anchor_interval=config["anchor_interval"],
+                include_rgb_obs=True,
+            )
+            env = ImgObsWrapper(env)
+        else:  # tabular
+            env = gym.make(
+                config["env_name"],
+                height=config["height"],
+                anchor_interval=config["anchor_interval"],
+            )
 
     else:
         env = gym.make(config["env_name"], render_mode=config["render_mode"])

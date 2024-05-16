@@ -15,7 +15,7 @@ register(
 DEFAULT_UP_ACTION = 0
 DEFAULT_ANCHOR_ACTION = 1
 
-_TILE_PIXS = 32
+_TILE_PIXS = 8
 _AGENT_SIZE_PROP = 0.5
 colors = {
     "red": (255, 0, 0),
@@ -72,13 +72,28 @@ class ClimbingEnv(gym.Env):
 
         # The observations are dictionaries with the agent's location and a bit
         # indicating whether the agent is by an anchor.
-        self.observation_space = spaces.Dict(
-            {
-                "agent_loc": spaces.Discrete(self._height),
-                "at_anchor": spaces.Discrete(2),
-                "last_anchor_loc": spaces.Discrete(self._height),
-            }
-        )
+        if self._include_rgb_obs:
+            self.observation_space = spaces.Dict(
+                {
+                    "agent_loc": spaces.Discrete(self._height),
+                    "at_anchor": spaces.Discrete(2),
+                    "last_anchor_loc": spaces.Discrete(self._height),
+                    "image": spaces.Box(
+                        low=0,
+                        high=255,
+                        shape=(_TILE_PIXS * self._height, _TILE_PIXS, 3),
+                        dtype=np.uint8,
+                    ),
+                }
+            )
+        else:
+            self.observation_space = spaces.Dict(
+                {
+                    "agent_loc": spaces.Discrete(self._height),
+                    "at_anchor": spaces.Discrete(2),
+                    "last_anchor_loc": spaces.Discrete(self._height),
+                }
+            )
         self.action_space = spaces.Discrete(
             2
         )  # 0: move up, 1: anchor in --- unless randomized.
@@ -99,7 +114,7 @@ class ClimbingEnv(gym.Env):
             "last_anchor_loc": self._last_anchor,
         }
         if self._include_rgb_obs:
-            obs["rgb"] = self._render_rgb_frame()
+            obs["image"] = self._render_rgb_frame()
         return obs
 
     def _get_info(self):

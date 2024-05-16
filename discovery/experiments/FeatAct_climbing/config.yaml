@@ -1,9 +1,10 @@
 env_name: 'discovery/Climbing-v0'
 learner: 'PPO'
-project_name: 'testing_climber'
-timesteps: 100000
-policy_type: 'MultiInputPolicy'
-stats_window_size: 10
+project_name: 'Climbing_Tabular'
+timesteps: 50000
+feat_extractor: 'cnn' # 'tabular', 'cnn'
+policy_type: 'CnnPolicy' # 'MultiInputPolicy', 'CnnPolicy'
+stats_window_size: 1
 
 # Shared hypers
 lr: 0.0003 # PPO_def: 3e-4
@@ -22,6 +23,6 @@ exploration_final_eps: 0.1 # 0.05
 target_update_interval: 500 # 10000
 
 # Env Specific hypers
-height: 50
+height: 25
 anchor_interval: 10
-include_anchor_bit: True
+include_anchor_bit: False
