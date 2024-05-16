@@ -23,8 +23,6 @@ def main(args):
         else:
             print(f"Using default value for {k}: {hparam_yaml[k]}")
 
-    breakpoint()
-
     # # Set random seed
     # np.random.seed(hparam_yaml['seed'])   # TODO: Check if this is the best way to set the seed
     # random.seed(hparam_yaml['seed'])
