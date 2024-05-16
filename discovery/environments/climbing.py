@@ -55,7 +55,7 @@ class ClimbingEnv(gym.Env):
         height: int = 8,
         anchor_interval: int = 4,
         randomized_actions: bool = False,
-        max_episode_length: int = 1000,
+        max_episode_length: int = 100,
         include_rgb_obs: bool = False,
     ):
         """Construct the environment."""
