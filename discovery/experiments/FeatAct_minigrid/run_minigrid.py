@@ -20,6 +20,10 @@ def main(args):
     for k, v in vars(args).items():
         if v is not None:
             hparam_yaml[k] = v
+        else:
+            print(f"Using default value for {k}: {hparam_yaml[k]}")
+
+    breakpoint()
 
     # # Set random seed
     # np.random.seed(hparam_yaml['seed'])   # TODO: Check if this is the best way to set the seed
@@ -210,20 +214,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--env_name",
         type=str,
-        default="MiniGrid-Empty-5x5-v0",
-        # default="TwoRoomEnv",
+        default=None,
         help="Minigrid environment official name.",
     )
     parser.add_argument(
-        "--learner", type=str, default="PPO", help="Learning algorithm used."
+        "--learner", type=str, default=None, help="Learning algorithm used."
     )
     parser.add_argument(
-        "--feat_dim", type=int, default=128, help="Dimension of feature space."
+        "--feat_dim", type=int, default=None, help="Dimension of feature space."
     )
     parser.add_argument(
         "--lr",
         type=float,
-        default=3e-4,
+        default=None,
         help="Learning rate of the Adam optimizer used to optimise surrogate loss.",
     )
     parser.add_argument(

@@ -1,5 +1,5 @@
-env_name: 'MiniGrid-DoorKey-5x5-v0'
-learner: 'DDQN'
+env_name: 'TwoRoomEnv'
+learner: 'PPO'
 project_name: 'testing_shared_private'
 timesteps: 100000
 policy_type: 'MultiInputPolicy'
