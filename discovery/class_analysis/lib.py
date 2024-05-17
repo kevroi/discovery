@@ -31,43 +31,6 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-def make_env_at_pos(position, direction):
-    env = TwoRoomEnv(
-        render_mode="rgb_array", agent_start_pos=position, agent_start_dir=direction
-    )
-    env = FullyObsWrapper(env)
-    env = ImgObsWrapper(env)
-    env = Monitor(env)
-    return env
-
-
-def create_dataset():
-    hallway = (7, 3)
-    xs = range(1, 14)
-    ys = range(1, 7)
-    xys = itertools.product(xs, ys)
-    coords_seq = []
-    dirs_seq = []
-    dirs = range(4)
-    all_data = itertools.product(xys, dirs)
-    images = []
-    obss = []
-    labels = []
-    for pos_, dir_ in all_data:
-        env = make_env_at_pos(position=pos_, direction=dir_)
-        try:
-            obss.append(env.reset())
-            images.append(env.render())
-            labels.append(bool(pos_ == hallway))
-            coords_seq.append(pos_)
-            dirs_seq.append(dir_)
-        except AssertionError:
-            # print("bad place:", pos_)
-            pass
-
-    return obss, images, labels, coords_seq, dirs_seq
-
-
 def obs_to_feats(model, obss):
     feats = []
     with torch.no_grad():
@@ -144,22 +107,84 @@ def train_classifier(
     return best_acc
 
 
-def see_log_reg(clf, feats, labels, coords, dirs):
+def predictions(clf, feats):
     X = torch.cat(feats, dim=0)
-    y = torch.tensor(labels).float()
     y_pred = clf(X)
+    return y_pred
 
-    torch.set_printoptions(linewidth=150, precision=2)
-    base = torch.ones((4, 7, 14)) * torch.nan
-    for idx, (coord, dir_) in enumerate(zip(coords, dirs)):
-        base[dir_, coord[1], coord[0]] = y_pred[idx].item()
-    for i in base:
-        print(i)
+
+def evaluate(clf, feats, labels, print_results=False):
+    y_pred = predictions(clf, feats)
+    y = torch.tensor(labels).float()
 
     acc = (y_pred.round() == y).float().mean()
-    print("Accuracy: ", acc)
     y_pred_np = y_pred.detach().numpy()
     c_m = confusion_matrix(labels, y_pred_np.round())
-    print("Confusion Matrix: ")
-    print(c_m)
+    if print_results:
+        print("Accuracy: ", acc)
+        print("Confusion Matrix: ")
+        print(c_m)
     return acc, c_m
+
+
+class MiniGridData:
+
+    def __init__(self):
+        obss, images, labels, coords_seq, dirs_seq = self._create_dataset()
+        self.obss = obss
+        self.images = images
+        self.labels = labels
+        self.coords_seq = coords_seq
+        self.dirs_seq = dirs_seq
+
+    def get_data(self):
+        # return self.obss, self.images, self.labels, self.coords_seq, self.dirs_se
+        return self.obss, self.images, self.labels
+
+    def visualize(self, clf, obs_to_feats_fn):
+        feats = obs_to_feats_fn(self.obss)
+        X = torch.cat(feats, dim=0)
+        y_pred = clf(X)
+
+        torch.set_printoptions(linewidth=150, precision=2)
+        base = torch.ones((4, 7, 14)) * torch.nan
+        for idx, (coord, dir_) in enumerate(zip(self.coords_seq, self.dirs_seq)):
+            base[dir_, coord[1], coord[0]] = y_pred[idx].item()
+        for i in base:
+            print(i)
+        torch.set_printoptions()  # Resets them.
+
+    def _make_env_at_pos(self, position, direction):
+        env = TwoRoomEnv(
+            render_mode="rgb_array", agent_start_pos=position, agent_start_dir=direction
+        )
+        env = FullyObsWrapper(env)
+        env = ImgObsWrapper(env)
+        env = Monitor(env)
+        return env
+
+    def _create_dataset(self):
+        hallway = (7, 3)
+        xs = range(1, 14)
+        ys = range(1, 7)
+        xys = itertools.product(xs, ys)
+        coords_seq = []
+        dirs_seq = []
+        dirs = range(4)
+        all_data = itertools.product(xys, dirs)
+        images = []
+        obss = []
+        labels = []
+        for pos_, dir_ in all_data:
+            env = self._make_env_at_pos(position=pos_, direction=dir_)
+            try:
+                obss.append(env.reset())
+                images.append(env.render())
+                labels.append(bool(pos_ == hallway))
+                coords_seq.append(pos_)
+                dirs_seq.append(dir_)
+            except AssertionError:
+                # print("bad place:", pos_)
+                pass
+
+        return obss, images, labels, coords_seq, dirs_seq

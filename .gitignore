@@ -1,3 +1,5 @@
+discovery/class_analysis/results.pkl
+
 venv/
 .DS_Store
 discovery.egg-info
