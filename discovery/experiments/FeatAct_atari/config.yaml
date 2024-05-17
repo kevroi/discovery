@@ -2,6 +2,7 @@ env_name: "ALE/Seaquest-v5"
 learner: 'PPO'
 project_name: 'PPO_on_Atari_Tests/Seaquest-v5'
 timesteps: 100000000
+frame_stack: 4
 feat_extractor: 'cnn'
 activation: 'relu'
 feat_dim: 512

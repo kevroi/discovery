@@ -3,7 +3,7 @@ import random
 import numpy as np
 import yaml
 from argparse import ArgumentParser
-from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
+from stable_baselines3.common.vec_env import VecFrameStack, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
 from discovery.agents.ddqn import DoubleDQN
 from discovery.utils.feat_extractors import *
@@ -45,6 +45,8 @@ def main(args):
 
     # Create environment
     env = make_atari_env(hparam_yaml["env_name"], n_envs=hparam_yaml["n_envs"], seed=0)
+    if hparam_yaml["frame_stack"] > 1:
+        env = VecFrameStack(env, n_stack=hparam_yaml["frame_stack"])
     if hparam_yaml["record_video"]:
         env = VecVideoRecorder(
             env,
@@ -133,9 +135,11 @@ def main(args):
     print(
         f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
-    model.learn(total_timesteps=hparam_yaml["timesteps"], )
+    model.learn(
+        total_timesteps=hparam_yaml["timesteps"],
+    )
     model.save(
-        f"experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
+        f"discovery/experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
     )
     print(
         f"Model saved at experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
