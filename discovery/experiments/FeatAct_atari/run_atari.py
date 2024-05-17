@@ -3,77 +3,28 @@ import random
 import numpy as np
 import yaml
 from argparse import ArgumentParser
-from stable_baselines3.common.vec_env import VecVideoRecorder
-from stable_baselines3.common.env_util import make_atari_env
-from stable_baselines3.common.vec_env import VecFrameStack
-from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
+from stable_baselines3 import PPO, DQN
+from discovery.agents.ddqn import DoubleDQN
+from discovery.utils.feat_extractors import *
 import wandb
-
-
-## HELPER FUNCTIONS ##
-def make_env(config):
-    env = make_atari_env(
-        config["env_name"],
-        n_envs=config["n_envs"],
-        #  seed=config['env_seed']
-    )
-    env = VecFrameStack(env, n_stack=4)
-    return env
-
-
-######################
-
-# config = {
-#     "env_name": "ALE/MontezumaRevenge-v5",
-#     "n_envs": 1, # TODO check if this means the same as PPO n_envs
-#     "env_seed": 0,
-#     "policy_type": "CnnPolicy",
-#     "timesteps": 1e5,
-#     "record_video": False,
-# }
-
-# run = wandb.init(
-#                 project="PPO_on_Atari_Tests",
-#                 config=config,
-#                 sync_tensorboard=True,
-#                 # monitor_gym=True,
-#                 save_code=True,
-#                 )
-
-# env = make_env()
-# print("env made")
-# if config["record_video"]:
-#     env = VecVideoRecorder(
-#                             env,
-#                             f"videos/{run.id}",
-#                             record_video_trigger=lambda x: x % 100000 == 0,
-#                             video_length=200,
-#                         )
-
-# model = PPO(config["policy_type"], env, verbose=1)
-# print("agent made")
-# model.learn(total_timesteps=config["timesteps"],
-#             )
-# print("learning done")
-
-# obs = env.reset()
-# while True:
-#     action, _states = model.predict(obs, deterministic=False)
-#     obs, rewards, dones, info = env.step(action)
-#     print(rewards)
-#     env.render("human")
+from discovery.utils.activations import *
+from discovery.experiments.FeatAct_minigrid.helpers import make_env
+from stable_baselines3.common.env_util import make_atari_env
 
 
 def main(args):
-    # Load hyperparameters from yaml file
-    with open(f"experiments/FeatAct_atari/{args.config_file}", "r") as f:
+    # Load YAML hyperparameters
+    with open(f"discovery/experiments/FeatAct_atari/{args.config_file}", "r") as f:
         hparam_yaml = yaml.safe_load(f)
     # Replace yaml default hypers with command line arguments
     for k, v in vars(args).items():
         if v is not None:
             hparam_yaml[k] = v
+        else:
+            print(f"Using default value for {k}: {hparam_yaml[k]}")
 
-    # Set seed
+    # # Set random seed
     # np.random.seed(hparam_yaml['seed'])   # TODO: Check if this is the best way to set the seed
     # random.seed(hparam_yaml['seed'])
 
@@ -87,12 +38,13 @@ def main(args):
             save_code=True,
         )
         run_id = run.id
+        wandb.run.log_code("./experiments/FeatAct_atari/")
     else:
         run = None
         run_id = "debug"
 
     # Create environment
-    env = make_env(config=hparam_yaml)
+    env = make_atari_env("ALE/Seaquest-v5", n_envs=8, seed=0)
     if hparam_yaml["record_video"]:
         env = VecVideoRecorder(
             env,
@@ -102,16 +54,107 @@ def main(args):
         )
 
     # Create agent
-    model = PPO(
-        hparam_yaml["policy_type"], env, verbose=1, tensorboard_log=f"runs/{run_id}"
+    if hparam_yaml["feat_extractor"] == "cnn":
+        policy_kwargs = dict(
+            features_extractor_class=NatureCNN,
+            features_extractor_kwargs=dict(
+                features_dim=hparam_yaml["feat_dim"],
+                last_layer_activation=hparam_yaml["activation"],
+            ),
+        )
+    else:
+        raise ValueError("Invalid CNN type. Choose from: 'cnn'.")
+
+    if hparam_yaml["learner"] == "PPO":
+        model = PPO(
+            hparam_yaml["policy_type"],
+            env,
+            learning_rate=hparam_yaml["lr"],
+            gamma=hparam_yaml["gamma"],
+            batch_size=hparam_yaml["batch_size"],
+            n_epochs=hparam_yaml["n_epochs"],
+            n_steps=hparam_yaml["n_steps"],
+            stats_window_size=hparam_yaml["stats_window_size"],
+            policy_kwargs=policy_kwargs,
+            verbose=1,
+            tensorboard_log=f"runs/{run_id}",
+        )
+        if hparam_yaml["use_wandb"]:
+            wandb.watch(
+                model.policy.features_extractor, log_freq=100, log="all", log_graph=True
+            )
+    elif hparam_yaml["learner"] == "DQN":
+        model = DQN(
+            hparam_yaml["policy_type"],
+            env,
+            learning_rate=hparam_yaml["lr"],
+            gamma=hparam_yaml["gamma"],
+            batch_size=hparam_yaml["batch_size"],
+            learning_starts=hparam_yaml["learning_starts"],
+            train_freq=hparam_yaml["train_freq"],
+            exploration_final_eps=hparam_yaml["exploration_final_eps"],
+            target_update_interval=hparam_yaml["target_update_interval"],
+            stats_window_size=hparam_yaml["stats_window_size"],
+            policy_kwargs=policy_kwargs,
+            verbose=1,
+            tensorboard_log=f"runs/{run_id}",
+        )
+        if hparam_yaml["use_wandb"]:
+            wandb.watch(
+                model.policy.q_net.features_extractor,
+                log_freq=100,
+                log="all",
+                log_graph=True,
+            )
+    elif hparam_yaml["learner"] == "DDQN":
+        model = DoubleDQN(
+            hparam_yaml["policy_type"],
+            env,
+            learning_rate=hparam_yaml["lr"],
+            gamma=hparam_yaml["gamma"],
+            batch_size=hparam_yaml["batch_size"],
+            learning_starts=hparam_yaml["learning_starts"],
+            train_freq=hparam_yaml["train_freq"],
+            exploration_final_eps=hparam_yaml["exploration_final_eps"],
+            target_update_interval=hparam_yaml["target_update_interval"],
+            stats_window_size=hparam_yaml["stats_window_size"],
+            policy_kwargs=policy_kwargs,
+            verbose=1,
+            tensorboard_log=f"runs/{run_id}",
+        )
+        if hparam_yaml["use_wandb"]:
+            wandb.watch(
+                model.policy.q_net.features_extractor,
+                log_freq=100,
+                log="all",
+                log_graph=True,
+            )
+
+    print(
+        f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
     model.learn(total_timesteps=hparam_yaml["timesteps"])
-    model.save(f'experiments/FeatAct_atari/models/ppo_{hparam_yaml["env_name"]}')
+    model.save(
+        f"experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
+    )
+    print(
+        f"Model saved at experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
+    )
+
+    # if hparam_yaml["analyse_rep"]:
+    #     from analyse_rep import get_feats
+
+    # feature_activations = get_feats(model, hparam_yaml)
+    # feature_activations = get_feats(model, hparam_yaml, see_bad_obs=True) # Uncomment to analyse bad observations too
 
 
 if __name__ == "__main__":
 
+    os.environ["WANDB__SERVICE_WAIT"] = "300"  # Waiting time for wandb to start
+
     parser = ArgumentParser()
+    # The config file and things we want to sweep over (overwriting the config file)
+    # CAREFUL: These default args also overwrite the config file
     parser.add_argument(
         "--config_file",
         type=str,
@@ -121,14 +164,31 @@ if __name__ == "__main__":
     parser.add_argument(
         "--env_name",
         type=str,
-        default="ALE/MontezumaRevenge-v5",
-        help="Atari environment official name.",
+        default=None,
+        help="Minigrid environment official name.",
+    )
+    parser.add_argument(
+        "--learner", type=str, default=None, help="Learning algorithm used."
+    )
+    parser.add_argument(
+        "--feat_dim", type=int, default=None, help="Dimension of feature space."
     )
     parser.add_argument(
         "--lr",
         type=float,
-        default=3e-4,
+        default=None,
         help="Learning rate of the Adam optimizer used to optimise surrogate loss.",
+    )
+    parser.add_argument(
+        "--run_num",
+        type=int,
+        default=-1,
+        help="Number of the run for multirun experiments.",
+    )
+    parser.add_argument(
+        "--analyse_rep",
+        action="store_true",  # set to false if we do not pass this argument
+        help="Raise the flag to analyse feature vector.",
     )
     parser.add_argument(
         "--use_wandb",
