@@ -44,7 +44,7 @@ def main(args):
         run_id = "debug"
 
     # Create environment
-    env = make_atari_env("ALE/Seaquest-v5", n_envs=8, seed=0)
+    env = make_atari_env(hparam_yaml["env_name"], n_envs=hparam_yaml["n_envs"], seed=0)
     if hparam_yaml["record_video"]:
         env = VecVideoRecorder(
             env,
@@ -133,7 +133,7 @@ def main(args):
     print(
         f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
-    model.learn(total_timesteps=hparam_yaml["timesteps"])
+    model.learn(total_timesteps=hparam_yaml["timesteps"], )
     model.save(
         f"experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
     )

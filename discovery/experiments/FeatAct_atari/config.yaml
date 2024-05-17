@@ -1,7 +1,7 @@
-env_name: 'seaquest'
+env_name: "ALE/Seaquest-v5"
 learner: 'PPO'
-project_name: 'PPO_on_Atari_Tests'
-timesteps: 1000000
+project_name: 'PPO_on_Atari_Tests/Seaquest-v5'
+timesteps: 100000000
 feat_extractor: 'cnn'
 activation: 'relu'
 feat_dim: 512
@@ -19,7 +19,7 @@ batch_size: 96 # PPO_def: 64, DQN_def: 32
 # PPO hypers & SB3 defaults
 n_epochs: 4 # 10
 n_steps: 128 # 2048
-n_envs: 16 # 1 #TODO this affects DDQN too!
+n_envs: 8 # 1 #TODO this affects DDQN too!
 
 # (D)DQN hypers & SB3 defaults
 learning_starts: 1000 # 100
