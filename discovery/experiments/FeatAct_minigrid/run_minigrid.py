@@ -10,6 +10,7 @@ from discovery.utils.feat_extractors import *
 import wandb
 from discovery.utils.activations import *
 from discovery.experiments.FeatAct_minigrid.helpers import make_env
+from discovery.utils.save_callback import SnapshotCallback
 
 
 def main(args):
@@ -178,10 +179,15 @@ def main(args):
                 log_graph=True,
             )
 
+    log_directory = f"discovery/experiments/FeatAct_minigrid/models/dir_{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
+    snapshot_callback = SnapshotCallback(
+        check_freq=100_000 // hparam_yaml["n_envs"], log_dir=log_directory, verbose=1
+    )
+
     print(
         f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
-    model.learn(total_timesteps=hparam_yaml["timesteps"])
+    model.learn(total_timesteps=hparam_yaml["timesteps"], callback=snapshot_callback)
     model.save(
         f"experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
     )
