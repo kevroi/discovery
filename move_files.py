@@ -3,8 +3,10 @@
 import argparse
 import os
 
-from paramiko import SSHClient
-from scp import SCPClient
+import subprocess
+
+# from paramiko import SSHClient
+# from scp import SCPClient
 
 from discovery.utils import filesys
 
@@ -30,13 +32,14 @@ parser.add_argument(
 
 
 paths_to_fetch = [
+    # The / at the end is important!
     "discovery/class_analysis/results.pkl",
-    "discovery/experiments/FeatAct_minigrid/model_snapshots",
-    "discovery/experiments/FeatAct_minigrid/models",
+    "discovery/experiments/FeatAct_minigrid/model_snapshots/",
+    "discovery/experiments/FeatAct_minigrid/models/",
 ]
 
 
-def get_root_dir(host, user):
+def get_remote_root_dir(host, user):
     if user == "dszepesv":
         if host == "salient3":
             return "/home/dszepesv/code/discovery"
@@ -46,30 +49,13 @@ def get_root_dir(host, user):
 def main():
     args = parser.parse_args()
     filesys.set_directory_in_project()
-
-    with SSHClient() as ssh:
-        ssh.load_system_host_keys()
-        try:
-            ssh.connect(args.host)
-        except Exception as e:
-            print(f"Failed to connect to {args.host}.")
-            print(f"Found host keys: {ssh.get_host_keys().keys()}")
-            print("Full error message:")
-            print(e)
-            return
-
-        with SCPClient(ssh.get_transport()) as scp:
-            get_all_files(args, scp)
-
-
-def get_all_files(args, scp):
+    print("Transfering files from remote machine to local machine:")
     for path in paths_to_fetch:
-        full_remote_path = os.path.join(get_root_dir(args.host, args.user), path)
-        print(f"Copy recursively {full_remote_path} --> {path}")
+        full_remote_path = os.path.join(get_remote_root_dir(args.host, args.user), path)
+        command = ["rsync", "-a", f"{args.host}:{full_remote_path}", path]
+        print(" *", " ".join(command))
         if not args.dry_run:
-            scp.get(
-                full_remote_path, local_path=path, recursive=True, preserve_times=True
-            )
+            subprocess.run(command)
 
 
 if __name__ == "__main__":
