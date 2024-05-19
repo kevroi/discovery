@@ -180,7 +180,10 @@ def main(args):
                 log_graph=True,
             )
 
-    log_directory = f"discovery/experiments/FeatAct_minigrid/models/dir_{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
+    filename_id = f"{hparam_yaml['extra_dirname']}/{hparam_yaml['env_name']}/{hparam_yaml['learner']}/{run_id}"
+    log_directory = (
+        f"discovery/experiments/FeatAct_minigrid/model_snapshots/{filename_id}"
+    )
     snapshot_callback = SnapshotCallback(
         check_freq=100_000 // hparam_yaml["n_envs"], log_dir=log_directory, verbose=1
     )
@@ -189,12 +192,8 @@ def main(args):
         f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
     model.learn(total_timesteps=hparam_yaml["timesteps"], callback=snapshot_callback)
-    model.save(
-        f"experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
-    )
-    print(
-        f"Model saved at experiments/FeatAct_minigrid/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
-    )
+    model.save(f"discovery/experiments/FeatAct_minigrid/models/{filename_id}")
+    print(f"Model saved at experiments/FeatAct_minigrid/models/{filename_id}")
 
     if hparam_yaml["analyse_rep"]:
         from analyse_rep import get_feats
