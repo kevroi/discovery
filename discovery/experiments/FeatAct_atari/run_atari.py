@@ -181,6 +181,9 @@ if __name__ == "__main__":
         "--learner", type=str, default=None, help="Learning algorithm used."
     )
     parser.add_argument(
+        "--activation", type=str, default=None, help="Activation function [LIST CHOICES]."
+    )
+    parser.add_argument(
         "--feat_dim", type=int, default=None, help="Dimension of feature space."
     )
     parser.add_argument(
