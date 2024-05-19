@@ -141,9 +141,7 @@ def main(args):
     print(
         f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
-    model.learn(
-        total_timesteps=hparam_yaml["timesteps"], callback=snapshot_callback
-    )
+    model.learn(total_timesteps=hparam_yaml["timesteps"], callback=snapshot_callback)
     model.save(
         f"discovery/experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
     )
@@ -181,7 +179,10 @@ if __name__ == "__main__":
         "--learner", type=str, default=None, help="Learning algorithm used."
     )
     parser.add_argument(
-        "--activation", type=str, default=None, help="Activation function [LIST CHOICES]."
+        "--activation",
+        type=str,
+        default=None,
+        help="Activation function [LIST CHOICES].",
     )
     parser.add_argument(
         "--feat_dim", type=int, default=None, help="Dimension of feature space."
