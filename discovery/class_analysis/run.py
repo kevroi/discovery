@@ -114,7 +114,8 @@ def try_process_file(
     #     data.accuracies.append(acc)
     #     data.conf_matrices.append(conf_mat)
     #     data.num_runs += 1
-    #     # Will update mean and std_err later.
+    #     data.acc_mean = np.mean(data.accuracies)
+    #     data.acc_std_err = np.std(data.accuracies) / np.sqrt(data.num_runs)
     # else:
     #     all_results[setting] = Data(
     #         wandb_ids=[wandb_id],
@@ -133,8 +134,6 @@ def recalculate_stats(
     """Updates all_results based on the modified_settings list."""
     for setting in modified_settings:
         data = all_results[setting]
-        data.acc_mean = np.mean(data.accuracies)
-        data.acc_std_err = np.std(data.accuracies) / np.sqrt(data.num_runs)
 
 
 def main():
