@@ -38,7 +38,7 @@ paths_to_fetch = [
 
 def get_root_dir(host, user):
     if user == "dszepesv":
-        if host == "salient":
+        if host == "salient3":
             return "/home/dszepesv/code/discovery"
     raise ValueError(f"Unknown host/user combination: {host}/{user}")
 
@@ -49,7 +49,14 @@ def main():
 
     with SSHClient() as ssh:
         ssh.load_system_host_keys()
-        ssh.connect(args.host)
+        try:
+            ssh.connect(args.host)
+        except Exception as e:
+            print(f"Failed to connect to {args.host}.")
+            print(f"Found host keys: {ssh.get_host_keys().keys()}")
+            print("Full error message:")
+            print(e)
+            return
 
         with SCPClient(ssh.get_transport()) as scp:
             get_all_files(args, scp)
