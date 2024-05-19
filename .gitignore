@@ -1,4 +1,7 @@
 discovery/class_analysis/results.pkl
+discovery/experiments/FeatAct_minigrid/model_snapshots
+discovery/experiments/FeatAct_minigrid/models
+old_minigrid_models
 
 venv/
 .DS_Store
