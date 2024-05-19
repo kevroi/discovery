@@ -1,5 +1,7 @@
 """This module contains the classification analysis functions."""
 
+import functools
+
 import itertools
 from discovery.experiments.FeatAct_minigrid.helpers import pre_process_obs
 from sklearn.metrics import confusion_matrix
@@ -125,6 +127,23 @@ def evaluate(clf, feats, labels, print_results=False):
         print("Confusion Matrix: ")
         print(c_m)
     return acc, c_m
+
+
+def process_model(data_manager_cls, model_path: str):
+    """Process a single model."""
+    data_mgr = data_manager_cls()
+    model = PPO.load(model_path)
+    obs_to_feats = functools.partial(obs_to_feats, model)
+    obss, images, labels = data_mgr.get_data()
+    feats = obs_to_feats(obss)
+    clf = sg_detection.LinearClassifier(input_size=32)
+    unused_best_acc = train_classifier(clf, feats, labels)
+    acc, conf_mat = evaluate(clf, feats, labels)
+    details = {
+        "classifier": clf,
+        "obs_to_feats": obs_to_feats,
+    }
+    return acc, conf_mat, details
 
 
 class MiniGridData:
