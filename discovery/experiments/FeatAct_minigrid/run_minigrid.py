@@ -126,6 +126,7 @@ def main(args):
             stats_window_size=hparam_yaml["stats_window_size"],
             policy_kwargs=policy_kwargs,
             verbose=1,
+            device=args.device,
             tensorboard_log=f"runs/{run_id}",
         )
         if hparam_yaml["use_wandb"]:
@@ -226,6 +227,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--feat_dim", type=int, default=None, help="Dimension of feature space."
+    )
+    parser.add_argument(
+        "--device", type=str, default=None, help="Device to run on, e.g. 'cuda:0'."
     )
     parser.add_argument(
         "--lr",
