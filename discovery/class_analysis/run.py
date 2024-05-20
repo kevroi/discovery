@@ -12,22 +12,17 @@ or may look slightly different, though it will always end with a wandb run id st
 
 """
 
-from ast import Not
 import wandb
-from enum import Enum
 from typing import Optional
 
 import argparse
 import os
-from dataclasses import dataclass
 import numpy as np
 import tqdm
 import pickle
 from discovery.utils import filesys
 from discovery.class_analysis import lib
 from discovery.class_analysis.datatypes import Setting, Data, EnvName, ModelType
-
-from stable_baselines3 import PPO
 
 
 _RESULT_STORE = "discovery/class_analysis/results.pkl"
@@ -59,6 +54,12 @@ _PATH_PREFIX_TO_PROJECT_NAME = {
     "discovery/experiments/FeatAct_minigrid/models/single_task_fta/TwoRoomEnv/PPO/": "TwoRoomsSingleTask2",
 }
 
+_PATH_PREFIX_TO_SETTING = {
+    "discovery/experiments/FeatAct_minigrid/models/multi_task_fta/TwoRoomEnv/PPO/": Setting(
+        multitask=True, model_type=ModelType.FTA, env_name=EnvName.TwoRooms
+    ),
+}
+
 
 env_name_to_data_mgr_cls = {
     EnvName.TwoRooms: lib.MiniGridData,
@@ -87,15 +88,20 @@ def extract_setting(path: str, name: str) -> tuple[Setting, str]:
     if len(parts) != 2:
         raise ValueError(f"Unexpected name: {name}; expected wandb_id.zip")
     wandb_id = parts[0]
-    for prefix, project_name in _PATH_PREFIX_TO_PROJECT_NAME.items():
-        if not path.startswith(prefix):
-            continue
+    # First we check if the path is mapped to a setting explictly.
+    setting = [s for p, s in _PATH_PREFIX_TO_SETTING.items() if path.startswith(p)]
+    if setting:
+        return setting[0], wandb_id
+    # If not, we try to infer the wandb project name from the path.
+    project_name = [
+        n for p, n in _PATH_PREFIX_TO_PROJECT_NAME.items() if path.startswith(p)
+    ]
     run = wandb_api.run(f"//{project_name}/{wandb_id}")
-    settings = _settings_from_config(run.config)
-    return settings, wandb_id
+    setting = _setting_from_config(run.config)
+    return setting, wandb_id
 
 
-def _settings_from_config(config: dict) -> Setting:
+def _setting_from_config(config: dict) -> Setting:
     if config["env_name"] == "TwoRoomEnv":
         env_name = EnvName.TwoRooms
         multitask = config["random_hallway"]
@@ -180,18 +186,15 @@ def main():
     else:
         all_results = load_existing_results(args.result_path)
 
-    modified_settings = []
-    n = 0
+    # modified_settings = []
     for dir_entry in tqdm.tqdm(list(os.scandir(args.load_dir))):
         if dir_entry.is_dir():
             print("SKIPPING -- dir", dir_entry.name)
             continue
         if dir_entry.is_file():
-            maybe_new_setting = try_process_file(
-                dir_entry.path, dir_entry.name, all_results
-            )
+            rel_path = _make_path_relative(dir_entry.path)
+            maybe_new_setting = try_process_file(rel_path, dir_entry.name, all_results)
             if maybe_new_setting is not None:
-                n += 1  # Count the number of new settings.
                 # We save right away if we have a new setting;
                 # this is to avoid losing data if the script crashes.
                 # For now this is very fast.
@@ -206,6 +209,13 @@ def main():
     #         pickle.dump(all_results, f)
     # else:
     #     print("No new results to save.")
+
+
+def _make_path_relative(path: str) -> str:
+    # Not really tested.
+    if path.startswith("/"):
+        return path[len(os.getcwd()) + 1 :]
+    return path
 
 
 if __name__ == "__main__":
