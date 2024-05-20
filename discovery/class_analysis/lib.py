@@ -1,5 +1,7 @@
 """This module contains the classification analysis functions."""
 
+from typing import Callable, Union
+from collections.abc import Iterable
 import functools
 
 import itertools
@@ -33,26 +35,20 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-def obs_to_feats(model, obss):
-    feats = []
-    with torch.no_grad():
-        for obs in obss:
-            obs = pre_process_obs(obs[0], model)
-            # print(obs[0].shape)
-            if model.__class__.__name__ == "DoubleDQN":
-                x = model.policy.extract_features(
-                    obs, model.policy.q_net.features_extractor
-                )
-            elif model.__class__.__name__ == "PPO":
-                x = model.policy.extract_features(obs)
-            feats.append(x)
-    return feats
-
-
 def train_classifier(
-    clf, feats, labels, n_epochs=500, batch_size=32, test_size=0.2, random_state=0
+    clf,
+    feats: Union[torch.Tensor, list[torch.Tensor]],
+    labels: list,
+    n_epochs=500,
+    batch_size=32,
+    test_size=0.0001,
+    random_state=None,
+    disable_tqdm=False,
 ):
-    X = torch.cat(feats, dim=0)
+    if isinstance(feats, list):
+        X = torch.cat(feats, dim=0)
+    else:
+        X = torch.tensor(feats).float()
     y = torch.tensor(labels).float()
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
@@ -78,7 +74,9 @@ def train_classifier(
 
     for epoch in range(n_epochs):
         clf.train()
-        with tqdm.tqdm(batch_start, unit="batch", mininterval=0, disable=False) as bar:
+        with tqdm.tqdm(
+            batch_start, unit="batch", mininterval=0, disable=disable_tqdm
+        ) as bar:
             bar.set_description(f"Epoch {epoch}")
             for start in bar:
                 # take a batch
@@ -109,8 +107,11 @@ def train_classifier(
     return best_acc
 
 
-def predictions(clf, feats):
-    X = torch.cat(feats, dim=0)
+def predictions(clf, feats: Union[torch.Tensor, list[torch.Tensor]]):
+    if isinstance(feats, list):
+        X = torch.cat(feats, dim=0)
+    else:
+        X = torch.tensor(feats).float()
     y_pred = clf(X)
     return y_pred
 
@@ -129,21 +130,50 @@ def evaluate(clf, feats, labels, print_results=False):
     return acc, c_m
 
 
-def process_model(data_manager_cls, model_path: str):
+def obs_to_feats_from_model(model, obss):
+    feats = []
+    with torch.no_grad():
+        for obs in obss:
+            obs = pre_process_obs(obs, model)
+            if model.__class__.__name__ == "DoubleDQN":
+                x = model.policy.extract_features(
+                    obs, model.policy.q_net.features_extractor
+                )
+            elif model.__class__.__name__ == "PPO":
+                x = model.policy.extract_features(obs)
+            feats.append(x)
+    return feats
+
+
+def process_saved_model(data_manager_cls, model_path: str):
+    model = PPO.load(model_path)
+    obs_to_feats = functools.partial(obs_to_feats_from_model, model)
+    return process_model(data_manager_cls, obs_to_feats)
+
+
+def process_model(data_manager_cls, obs_to_feats: Callable[[Iterable], list]) -> dict:
+    # def process_model(data_manager_cls, model_path: str):
     """Process a single model."""
     data_mgr = data_manager_cls()
-    model = PPO.load(model_path)
-    obs_to_feats = functools.partial(obs_to_feats, model)
     obss, images, labels = data_mgr.get_data()
     feats = obs_to_feats(obss)
-    clf = sg_detection.LinearClassifier(input_size=32)
-    unused_best_acc = train_classifier(clf, feats, labels)
-    acc, conf_mat = evaluate(clf, feats, labels)
-    details = {
-        "classifier": clf,
-        "obs_to_feats": obs_to_feats,
+    feat_dim = feats[0].shape[-1]
+    classifiers = {
+        "linear": sg_detection.LinearClassifier(input_size=feat_dim),
+        "nonlinear": sg_detection.NonLinearClassifier(
+            input_size=feat_dim, hidden_size=64
+        ),
     }
-    return acc, conf_mat, details
+    results = {}
+    for clf_name, clf in classifiers.items():
+        unused_best_acc = train_classifier(clf, feats, labels, disable_tqdm=True)
+        acc, conf_mat = evaluate(clf, feats, labels)
+        details = {
+            "classifier": clf,
+            "obs_to_feats": obs_to_feats,
+        }
+        results[clf_name] = (float(acc), conf_mat, details)
+    return results
 
 
 class MiniGridData:
@@ -197,7 +227,8 @@ class MiniGridData:
         for pos_, dir_ in all_data:
             env = self._make_env_at_pos(position=pos_, direction=dir_)
             try:
-                obss.append(env.reset())
+                # obss.append(env.reset())
+                obss.append(env.reset()[0])  # Just the observation.
                 images.append(env.render())
                 labels.append(bool(pos_ == hallway))
                 coords_seq.append(pos_)

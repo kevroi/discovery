@@ -1,14 +1,14 @@
 env_name: 'TwoRoomEnv'
 learner: 'PPO'
-project_name: 'TwoRoomsSingleTask2'
-extra_dirname: 'single_task_fta'
+project_name: 'two_rooms_single_task_cnn'
+extra_dirname: 'two_rooms_single_task_cnn'
 timesteps: 1000000
 policy_type: 'CnnPolicy'
 cnn: 'minigrid' # 'nature', 'minigrid', 'minigrid_sp', 'minigrid_hallfeat'
-activation: 'fta'
-feat_dim: 640
-# activation: 'relu'
-# feat_dim: 32
+# activation: 'fta'
+# feat_dim: 640
+activation: 'relu'
+feat_dim: 32
 stats_window_size: 10
 record_video: False
 render_mode: 'rgb_array'
@@ -30,5 +30,5 @@ exploration_final_eps: 0.1 # 0.05
 target_update_interval: 500 # 10000
 
 # Env-specific hypers
-random_hallway: True # TwoRoomEnv
-# random_hallway: False # TwoRoomEnv
+# random_hallway: True # TwoRoomEnv
+random_hallway: False # TwoRoomEnv
