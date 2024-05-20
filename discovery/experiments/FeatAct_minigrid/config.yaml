@@ -1,14 +1,14 @@
 env_name: 'TwoRoomEnv'
 learner: 'PPO'
-project_name: 'TwoRoomsSingleTask2'
-extra_dirname: 'single_task_fta'
+project_name: 'two_rooms_multi_task_cnn'
+extra_dirname: 'two_rooms_multi_task_cnn'
 timesteps: 1000000
 policy_type: 'CnnPolicy'
 cnn: 'minigrid' # 'nature', 'minigrid', 'minigrid_sp', 'minigrid_hallfeat'
-activation: 'fta'
-feat_dim: 640
-# activation: 'relu'
-# feat_dim: 32
+# activation: 'fta'
+# feat_dim: 640
+activation: 'relu'
+feat_dim: 32
 stats_window_size: 10
 record_video: False
 render_mode: 'rgb_array'
