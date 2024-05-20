@@ -52,6 +52,7 @@ parser.add_argument(
 # not currently encoded in the path, so we need to keep a mapping.
 _PATH_PREFIX_TO_PROJECT_NAME = {
     "discovery/experiments/FeatAct_minigrid/models/single_task_fta/TwoRoomEnv/PPO/": "TwoRoomsSingleTask2",
+    "discovery/experiments/FeatAct_minigrid/models/two_rooms_multi_task_cnn/TwoRoomEnv/PPO/": "two_rooms_multi_task_cnn",
 }
 
 _PATH_PREFIX_TO_SETTING = {
