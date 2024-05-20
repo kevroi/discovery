@@ -7,6 +7,9 @@ import numpy as np
 class ModelType(Enum):
     CNN = 1
     FTA = 2
+    RANDOM_PROJ_GAUSS = 3
+    RANDOM_PROJ_SPARSE = 4
+    OBSERVATION = 5
 
 
 class EnvName(Enum):
@@ -23,7 +26,7 @@ class Setting:
 
 @dataclass
 class Data:
-    wandb_ids: list[str]
+    wandb_ids: list[str]  # For random projection models this is undefined.
     num_runs: int
     lin_accuracies: list[float]
     lin_conf_matrices: list[np.array]
