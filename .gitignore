@@ -4,6 +4,8 @@ discovery/experiments/FeatAct_minigrid/models
 old_minigrid_models
 datasets/AAD/clean/SeaquestNoFrameskip-v4/
 
+*.pkl
+
 venv/
 .DS_Store
 discovery.egg-info
