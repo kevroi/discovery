@@ -1,11 +1,10 @@
 """This module contains the classification analysis functions."""
 
-from typing import Callable, Union
+from typing import Callable, Union, Type
 from collections.abc import Iterable
 import functools
 
 import itertools
-from discovery.experiments.FeatAct_minigrid.helpers import pre_process_obs
 from sklearn.metrics import confusion_matrix
 
 import numpy as np
@@ -34,6 +33,18 @@ import tqdm
 import torch.nn as nn
 import torch.optim as optim
 
+from discovery.class_analysis import datasources
+
+
+def _to_tensor(feats):
+    if isinstance(feats, list):
+        X = torch.cat(feats, dim=0)
+    elif isinstance(feats, torch.Tensor):
+        X = feats
+    else:
+        X = torch.tensor(feats).float()
+    return X
+
 
 def train_classifier(
     clf,
@@ -45,10 +56,7 @@ def train_classifier(
     random_state=None,
     disable_tqdm=False,
 ):
-    if isinstance(feats, list):
-        X = torch.cat(feats, dim=0)
-    else:
-        X = torch.tensor(feats).float()
+    X = _to_tensor(feats)
     y = torch.tensor(labels).float()
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
@@ -108,10 +116,7 @@ def train_classifier(
 
 
 def predictions(clf, feats: Union[torch.Tensor, list[torch.Tensor]]):
-    if isinstance(feats, list):
-        X = torch.cat(feats, dim=0)
-    else:
-        X = torch.tensor(feats).float()
+    X = _to_tensor(feats)
     y_pred = clf(X)
     return y_pred
 
@@ -131,31 +136,48 @@ def evaluate(clf, feats, labels, print_results=False):
 
 
 def obs_to_feats_from_model(model, obss):
-    feats = []
-    with torch.no_grad():
-        for obs in obss:
-            obs = pre_process_obs(obs, model)
-            if model.__class__.__name__ == "DoubleDQN":
-                x = model.policy.extract_features(
-                    obs, model.policy.q_net.features_extractor
-                )
-            elif model.__class__.__name__ == "PPO":
-                x = model.policy.extract_features(obs)
-            feats.append(x)
+
+    def _map(obs_tensor):
+        if model.__class__.__name__ == "DoubleDQN":
+            x = model.policy.extract_features(
+                obs_tensor, model.policy.q_net.features_extractor
+            )
+        elif model.__class__.__name__ == "PPO":
+            x = model.policy.extract_features(obs_tensor)
+        return x
+
+    try:
+        with torch.no_grad():
+            feats = _map(obss)
+    except Exception as e:
+        print(
+            "Could not process the full tensor in one go, will try to "
+            "process one-by-one. Original error:\n",
+            e,
+        )
+        with torch.no_grad():
+            feats = [_map(obs) for obs in obss]
     return feats
 
 
-def process_saved_model(data_manager_cls, model_path: str):
+def process_saved_model(data_manager: datasources.DataSource, model_path: str) -> dict:
     model = PPO.load(model_path)
-    obs_to_feats = functools.partial(obs_to_feats_from_model, model)
-    return process_model(data_manager_cls, obs_to_feats)
+
+    def obs_to_feats(obss):
+        preproc_obss = data_manager.obs_preprocessor(obss)
+        tensors = obs_as_tensor(preproc_obss, model.device)
+        return obs_to_feats_from_model(model, tensors)
+
+    return process_model(data_manager, obs_to_feats)
 
 
-def process_model(data_manager_cls, obs_to_feats: Callable[[Iterable], list]) -> dict:
+def process_model(
+    data_manager: datasources.DataSource,
+    obs_to_feats: Callable[[Iterable], list],
+) -> dict:
     # def process_model(data_manager_cls, model_path: str):
     """Process a single model."""
-    data_mgr = data_manager_cls()
-    obss, images, labels = data_mgr.get_data()
+    obss, images, labels = data_manager.get_data()
     feats = obs_to_feats(obss)
     feat_dim = feats[0].shape[-1]
     classifiers = {
@@ -174,67 +196,3 @@ def process_model(data_manager_cls, obs_to_feats: Callable[[Iterable], list]) ->
         }
         results[clf_name] = (float(acc), conf_mat, details)
     return results
-
-
-class MiniGridData:
-
-    def __init__(self):
-        obss, images, labels, coords_seq, dirs_seq = self._create_dataset()
-        self.obss = obss
-        self.images = images
-        self.labels = labels
-        self.coords_seq = coords_seq
-        self.dirs_seq = dirs_seq
-
-    def get_data(self):
-        # return self.obss, self.images, self.labels, self.coords_seq, self.dirs_se
-        return self.obss, self.images, self.labels
-
-    def visualize(self, clf, obs_to_feats_fn):
-        feats = obs_to_feats_fn(self.obss)
-        X = torch.cat(feats, dim=0)
-        y_pred = clf(X)
-
-        torch.set_printoptions(linewidth=150, precision=2)
-        base = torch.ones((4, 7, 14)) * torch.nan
-        for idx, (coord, dir_) in enumerate(zip(self.coords_seq, self.dirs_seq)):
-            base[dir_, coord[1], coord[0]] = y_pred[idx].item()
-        for i in base:
-            print(i)
-        torch.set_printoptions()  # Resets them.
-
-    def _make_env_at_pos(self, position, direction):
-        env = TwoRoomEnv(
-            render_mode="rgb_array", agent_start_pos=position, agent_start_dir=direction
-        )
-        env = FullyObsWrapper(env)
-        env = ImgObsWrapper(env)
-        env = Monitor(env)
-        return env
-
-    def _create_dataset(self):
-        hallway = (7, 3)
-        xs = range(1, 14)
-        ys = range(1, 7)
-        xys = itertools.product(xs, ys)
-        coords_seq = []
-        dirs_seq = []
-        dirs = range(4)
-        all_data = itertools.product(xys, dirs)
-        images = []
-        obss = []
-        labels = []
-        for pos_, dir_ in all_data:
-            env = self._make_env_at_pos(position=pos_, direction=dir_)
-            try:
-                # obss.append(env.reset())
-                obss.append(env.reset()[0])  # Just the observation.
-                images.append(env.render())
-                labels.append(bool(pos_ == hallway))
-                coords_seq.append(pos_)
-                dirs_seq.append(dir_)
-            except AssertionError:
-                # print("bad place:", pos_)
-                pass
-
-        return obss, images, labels, coords_seq, dirs_seq

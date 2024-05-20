@@ -12,6 +12,7 @@ or may look slightly different, though it will always end with a wandb run id st
 
 """
 
+import functools
 import wandb
 from typing import Optional
 
@@ -21,24 +22,32 @@ import numpy as np
 import tqdm
 import pickle
 from discovery.utils import filesys
-from discovery.class_analysis import lib
+from discovery.class_analysis import lib, datasources
 from discovery.class_analysis.datatypes import Setting, Data, EnvName, ModelType
 from sklearn import random_projection
 
 
 _RESULT_STORE = "discovery/class_analysis/results.pkl"
+_WHITELIST_SETTINGS = None  # Do every setting.
 
 # Some settings for debugging.
-# _MAX_NUM_MODELS_TO_PROCESS = 1
+# _MAX_NUM_MODELS_TO_PROCESS = 2
 _MAX_NUM_MODELS_TO_PROCESS = None
-# _RESULT_STORE = "discovery/class_analysis/results_DEBUG.pkl"
-
+_RESULT_STORE = "discovery/class_analysis/results_DEBUG2.pkl"
+_WHITELIST_SETTINGS = [
+    Setting(multitask=False, model_type=ModelType.CNN, env_name=EnvName.TwoRooms)
+]
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--load_dir",
     type=str,
     help="The directory with the models to load. May be relative to project root.",
+)
+parser.add_argument(
+    "--recursive",
+    action="store_true",  # set to false if we do not pass this argument
+    help="If true, will search recursively for models in the directory.",
 )
 parser.add_argument(
     "--ignore_existing",
@@ -75,9 +84,18 @@ _PATH_PREFIX_TO_SETTING = {
     ),
 }
 
-
+# TODO: this loads the seaquest data when we load the module, which takes long (10+s)
+# and is not necessary if we don't analyze seaquest models.
 env_name_to_data_mgr_cls = {
-    EnvName.TwoRooms: lib.MiniGridData,
+    EnvName.TwoRooms: datasources.MiniGridData(),
+    EnvName.Seaquest: datasources.SeaquestData(
+        obs_filepath=filesys.make_abs_path_in_root(
+            "datasets/AAD/clean/SeaquestNoFrameskip-v4/episode(1).hdf5"
+        ),
+        label_filepath=filesys.make_abs_path_in_root(
+            "datasets/AAD/clean/SeaquestNoFrameskip-v4/episode(1)_labels.npy",
+        ),
+    ),
 }
 
 
@@ -184,6 +202,9 @@ def process_model_at_path(
     """Updates all_results with an analysis of the model at model_path."""
     # See the comment at the top of the file for the format of the path.
     setting, wandb_id = extract_setting(model_path, file_name)
+    if _WHITELIST_SETTINGS is not None and setting not in _WHITELIST_SETTINGS:
+        return None
+
     print("PROCESSING:", model_path)
     if setting in all_results and wandb_id in all_results[setting].wandb_ids:
         print("    skipping -- already processed.")
@@ -224,8 +245,15 @@ def main():
 
     # modified_settings = []
     num_new_settings = 0
+
+    if args.recursive:
+        all_files = scantree(args.load_dir)
+    else:
+        all_files = os.scandir(args.load_dir)
+
+    skipped_due_to_error = []
     if args.load_dir is not None:
-        for dir_entry in tqdm.tqdm(list(os.scandir(args.load_dir))):
+        for dir_entry in tqdm.tqdm(list(all_files)):
             if dir_entry.is_dir():
                 print("SKIPPING -- dir:", dir_entry.name)
                 continue
@@ -234,9 +262,14 @@ def main():
                     print("SKIPPING -- not a .zip file:", dir_entry.name)
                     continue
                 rel_path = _make_path_relative(dir_entry.path)
-                maybe_new_setting = process_model_at_path(
-                    rel_path, dir_entry.name, all_results
-                )
+                try:
+                    maybe_new_setting = process_model_at_path(
+                        rel_path, dir_entry.name, all_results
+                    )
+                except ValueError as e:
+                    print("SKIPPING -- error: ", dir_entry.name)
+                    skipped_due_to_error.append((rel_path, e))
+                    continue
                 if maybe_new_setting is not None:
                     num_new_settings += 1
                     # We save right away if we have a new setting;
@@ -252,6 +285,13 @@ def main():
     if added_new_runs:
         with open(args.result_path, "wb") as f:
             pickle.dump(all_results, f)
+
+    print()
+    print()
+    print("Skipped due to error:")
+    for path, e in skipped_due_to_error:
+        print(" *", path)
+        print("      ", e)
 
 
 def add_random_projections(num_seeds: int, all_results: dict[Setting, Data]) -> bool:
@@ -332,6 +372,16 @@ def _make_path_relative(path: str) -> str:
     if path.startswith("/"):
         return path[len(os.getcwd()) + 1 :]
     return path
+
+
+def scantree(path):
+    """Recursively yield DirEntry objects for given directory."""
+    # from https://stackoverflow.com/a/33135143
+    for entry in os.scandir(path):
+        if entry.is_dir(follow_symlinks=False):
+            yield from scantree(entry.path)
+        else:
+            yield entry
 
 
 if __name__ == "__main__":
