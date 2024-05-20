@@ -44,7 +44,13 @@ parser.add_argument(
     "--result_path",
     type=str,
     default=_RESULT_STORE,
-    help="Where to store results. May be relative to root.",
+    help="Where to store results. May be relative to project root.",
+)
+parser.add_argument(
+    "--random_proj_seeds",
+    type=int,
+    default=0,
+    help="The minimum number of random projections analyzed for each environment.",
 )
 
 
@@ -58,6 +64,9 @@ _PATH_PREFIX_TO_PROJECT_NAME = {
 _PATH_PREFIX_TO_SETTING = {
     "discovery/experiments/FeatAct_minigrid/models/multi_task_fta/TwoRoomEnv/PPO/": Setting(
         multitask=True, model_type=ModelType.FTA, env_name=EnvName.TwoRooms
+    ),
+    "discovery/experiments/FeatAct_minigrid/models/two_rooms_single_task_cnn/TwoRoomEnv/PPO/": Setting(
+        multitask=False, model_type=ModelType.CNN, env_name=EnvName.TwoRooms
     ),
 }
 
@@ -85,10 +94,14 @@ def extract_setting(path: str, name: str) -> tuple[Setting, str]:
     # Example path:
     # discovery/experiments/FeatAct_minigrid/models/single_task_fta/TwoRoomEnv/PPO/3b4zmkze.zip,
     # or may look slightly different, though it will always end with a wandb run id string.
+    # sooo turns out sometimes the filename is actually something like
+    # `PPO_TwoRoomEnv_4nnytzzm.zip`.. for now we'll hardcode this case.
     parts = name.split(".")
     if len(parts) != 2:
         raise ValueError(f"Unexpected name: {name}; expected wandb_id.zip")
     wandb_id = parts[0]
+    if wandb_id.startswith("PPO_TwoRoomEnv_"):
+        wandb_id = wandb_id[len("PPO_TwoRoomEnv_") :]
     # First we check if the path is mapped to a setting explictly.
     setting = [s for p, s in _PATH_PREFIX_TO_SETTING.items() if path.startswith(p)]
     if setting:
