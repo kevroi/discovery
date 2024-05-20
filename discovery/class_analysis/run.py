@@ -12,9 +12,9 @@ or may look slightly different, though it will always end with a wandb run id st
 
 """
 
-from ast import mod
-import functools
-from multiprocessing import process
+from ast import Not
+import wandb
+from enum import Enum
 from typing import Optional
 
 import argparse
@@ -24,20 +24,21 @@ import numpy as np
 import tqdm
 import pickle
 from discovery.utils import filesys
-from discovery.utils import sg_detection
 from discovery.class_analysis import lib
+from discovery.class_analysis.datatypes import Setting, Data, EnvName, ModelType
 
 from stable_baselines3 import PPO
 
 
 _RESULT_STORE = "discovery/class_analysis/results.pkl"
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--load_dir",
     type=str,
     required=True,
-    help="The directory with the models to load. May be relative to root.",
+    help="The directory with the models to load. May be relative to project root.",
 )
 parser.add_argument(
     "--ignore_existing",
@@ -52,26 +53,19 @@ parser.add_argument(
 )
 
 
-@dataclass
-class Setting:
-    multitask: bool
-    model_type: str
-    env_name: str
-
-
-@dataclass
-class Data:
-    wandb_ids: list[str]
-    accuracies: list[float]
-    conf_matrices: list[np.array]
-    num_runs: int
-    acc_mean: float
-    acc_std_err: float
+# To get the config from wandb, we need to know the project name. This is
+# not currently encoded in the path, so we need to keep a mapping.
+_PATH_PREFIX_TO_PROJECT_NAME = {
+    "discovery/experiments/FeatAct_minigrid/models/single_task_fta/TwoRoomEnv/PPO/": "TwoRoomsSingleTask2",
+}
 
 
 env_name_to_data_mgr_cls = {
-    "TwoRoomEnv": lib.MiniGridData,
+    EnvName.TwoRooms: lib.MiniGridData,
 }
+
+
+wandb_api = wandb.Api()
 
 
 def load_existing_results(result_path: str):
@@ -89,8 +83,33 @@ def extract_setting(path: str, name: str) -> tuple[Setting, str]:
     # Example path:
     # discovery/experiments/FeatAct_minigrid/models/single_task_fta/TwoRoomEnv/PPO/3b4zmkze.zip,
     # or may look slightly different, though it will always end with a wandb run id string.
-    print(name)
-    return Setting(False, "cnn", "TwoRoomEnv"), name
+    parts = name.split(".")
+    if len(parts) != 2:
+        raise ValueError(f"Unexpected name: {name}; expected wandb_id.zip")
+    wandb_id = parts[0]
+    for prefix, project_name in _PATH_PREFIX_TO_PROJECT_NAME.items():
+        if not path.startswith(prefix):
+            continue
+    run = wandb_api.run(f"//{project_name}/{wandb_id}")
+    settings = _settings_from_config(run.config)
+    return settings, wandb_id
+
+
+def _settings_from_config(config: dict) -> Setting:
+    if config["env_name"] == "TwoRoomEnv":
+        env_name = EnvName.TwoRooms
+        multitask = config["random_hallway"]
+    else:
+        raise NotImplementedError(f"Unknown env_name: {env_name}")
+    if config["activation"] == "fta":
+        model_type = ModelType.FTA
+    else:
+        model_type = ModelType.CNN
+    return Setting(
+        multitask=multitask,
+        model_type=model_type,
+        env_name=env_name,
+    )
 
 
 def try_process_file(
@@ -99,41 +118,46 @@ def try_process_file(
     """Updates all_results with an analysis of the model at path."""
     # See the comment at the top of the file for the format of the path.
     setting, wandb_id = extract_setting(path, name)
-    return None
-    # if setting in all_results and wandb_id in all_results[setting].wandb_ids:
-    #     print("SKIPPING -- already processed:", name)
-    #     return None
+    print("PROCESSING:", path)
+    if setting in all_results and wandb_id in all_results[setting].wandb_ids:
+        print("    skipping -- already processed.")
+        return None
 
-    # acc, conf_mat, details = lib.process_model(
-    #     env_name_to_data_mgr_cls[setting.env_name], path
-    # )
+    results = lib.process_model(env_name_to_data_mgr_cls[setting.env_name], path)
+    lin_acc, lin_conf_mat, lin_details = results["linear"]
+    nonlin_acc, nonlin_conf_mat, nonlin_details = results["nonlinear"]
+    print("    linear acc:", lin_acc)
+    print("    nonlin acc:", nonlin_acc)
 
-    # if setting in all_results:
-    #     data = all_results[setting]
-    #     data.wandb_ids.append(wandb_id)
-    #     data.accuracies.append(acc)
-    #     data.conf_matrices.append(conf_mat)
-    #     data.num_runs += 1
-    #     data.acc_mean = np.mean(data.accuracies)
-    #     data.acc_std_err = np.std(data.accuracies) / np.sqrt(data.num_runs)
-    # else:
-    #     all_results[setting] = Data(
-    #         wandb_ids=[wandb_id],
-    #         accuracies=[acc],
-    #         conf_matrices=[conf_mat],
-    #         num_runs=1,
-    #         acc_mean=0.0,
-    #         acc_std_err=0.0,
-    #     )
-    # return setting
-
-
-def recalculate_stats(
-    all_results: dict[Setting, Data], modified_settings: list[Setting]
-):
-    """Updates all_results based on the modified_settings list."""
-    for setting in modified_settings:
+    if setting in all_results:
         data = all_results[setting]
+        data.num_runs += 1
+        data.wandb_ids.append(wandb_id)
+        data.lin_accuracies.append(lin_acc)
+        data.lin_conf_matrices.append(lin_conf_mat)
+        data.lin_acc_mean = np.mean(data.lin_accuracies)
+        data.lin_acc_std_err = np.std(data.lin_accuracies) / np.sqrt(data.num_runs)
+        data.nonlin_accuracies.append(nonlin_acc)
+        data.nonlin_conf_matrices.append(nonlin_conf_mat)
+        data.nonlin_acc_mean = np.mean(data.nonlin_accuracies)
+        data.nonlin_acc_std_err = np.std(data.nonlin_accuracies) / np.sqrt(
+            data.num_runs
+        )
+    else:
+        all_results[setting] = Data(
+            wandb_ids=[wandb_id],
+            num_runs=1,
+            lin_accuracies=[lin_acc],
+            lin_conf_matrices=[lin_conf_mat],
+            lin_acc_mean=lin_acc,
+            lin_acc_std_err=0.0,
+            nonlin_accuracies=[nonlin_acc],
+            nonlin_conf_matrices=[nonlin_conf_mat],
+            nonlin_acc_mean=nonlin_acc,
+            nonlin_acc_std_err=0.0,
+        )
+
+    return setting
 
 
 def main():
@@ -157,7 +181,8 @@ def main():
         all_results = load_existing_results(args.result_path)
 
     modified_settings = []
-    for dir_entry in tqdm.tqdm(os.scandir(args.load_dir)):
+    n = 0
+    for dir_entry in tqdm.tqdm(list(os.scandir(args.load_dir))):
         if dir_entry.is_dir():
             print("SKIPPING -- dir", dir_entry.name)
             continue
@@ -166,9 +191,12 @@ def main():
                 dir_entry.path, dir_entry.name, all_results
             )
             if maybe_new_setting is not None:
-                modified_settings.append(maybe_new_setting)
-
-    assert not modified_settings, "No new settings to process."
+                n += 1  # Count the number of new settings.
+                # We save right away if we have a new setting;
+                # this is to avoid losing data if the script crashes.
+                # For now this is very fast.
+                with open(args.result_path, "wb") as f:
+                    pickle.dump(all_results, f)
 
     # if modified_settings:
     #     recalculate_stats(all_results, modified_settings)
@@ -178,20 +206,6 @@ def main():
     #         pickle.dump(all_results, f)
     # else:
     #     print("No new results to save.")
-
-
-# minigrid_models = {
-#     "multitask_cnn": Model(
-#         multitask=True,
-#         model_type="cnn",
-#         wandb_id="5i6lt53x",
-#         model_path="experiments/FeatAct_minigrid/models/PPO_TwoRoomEnv_5i6lt53x.zip",
-#     ),
-# }
-
-# climbing_models = {}
-
-# atari_models = {}
 
 
 if __name__ == "__main__":

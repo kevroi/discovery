@@ -33,7 +33,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-def obs_to_feats(model, obss):
+def obs_to_feats_for_model(model, obss):
     feats = []
     with torch.no_grad():
         for obs in obss:
@@ -50,7 +50,14 @@ def obs_to_feats(model, obss):
 
 
 def train_classifier(
-    clf, feats, labels, n_epochs=500, batch_size=32, test_size=0.2, random_state=0
+    clf,
+    feats,
+    labels,
+    n_epochs=500,
+    batch_size=32,
+    test_size=0.0001,
+    random_state=None,
+    disable_tqdm=False,
 ):
     X = torch.cat(feats, dim=0)
     y = torch.tensor(labels).float()
@@ -78,7 +85,9 @@ def train_classifier(
 
     for epoch in range(n_epochs):
         clf.train()
-        with tqdm.tqdm(batch_start, unit="batch", mininterval=0, disable=False) as bar:
+        with tqdm.tqdm(
+            batch_start, unit="batch", mininterval=0, disable=disable_tqdm
+        ) as bar:
             bar.set_description(f"Epoch {epoch}")
             for start in bar:
                 # take a batch
@@ -133,17 +142,26 @@ def process_model(data_manager_cls, model_path: str):
     """Process a single model."""
     data_mgr = data_manager_cls()
     model = PPO.load(model_path)
-    obs_to_feats = functools.partial(obs_to_feats, model)
+    obs_to_feats = functools.partial(obs_to_feats_for_model, model)
     obss, images, labels = data_mgr.get_data()
     feats = obs_to_feats(obss)
-    clf = sg_detection.LinearClassifier(input_size=32)
-    unused_best_acc = train_classifier(clf, feats, labels)
-    acc, conf_mat = evaluate(clf, feats, labels)
-    details = {
-        "classifier": clf,
-        "obs_to_feats": obs_to_feats,
+    feat_dim = feats[0].shape[-1]
+    classifiers = {
+        "linear": sg_detection.LinearClassifier(input_size=feat_dim),
+        "nonlinear": sg_detection.NonLinearClassifier(
+            input_size=feat_dim, hidden_size=64
+        ),
     }
-    return acc, conf_mat, details
+    results = {}
+    for clf_name, clf in classifiers.items():
+        unused_best_acc = train_classifier(clf, feats, labels, disable_tqdm=True)
+        acc, conf_mat = evaluate(clf, feats, labels)
+        details = {
+            "classifier": clf,
+            "obs_to_feats": obs_to_feats,
+        }
+        results[clf_name] = (float(acc), conf_mat, details)
+    return results
 
 
 class MiniGridData:

@@ -33,6 +33,8 @@ parser.add_argument(
 
 paths_to_fetch = [
     # The / at the end is important!
+    # The paths are relative to the root of the project on the remote machine,
+    # on the local machine the same paths will be used.
     "discovery/class_analysis/results.pkl",
     "discovery/experiments/FeatAct_minigrid/model_snapshots/",
     "discovery/experiments/FeatAct_minigrid/models/",
