@@ -96,7 +96,9 @@ def extract_setting(path: str, name: str) -> tuple[Setting, str]:
     project_name = [
         n for p, n in _PATH_PREFIX_TO_PROJECT_NAME.items() if path.startswith(p)
     ]
-    run = wandb_api.run(f"//{project_name}/{wandb_id}")
+    if not project_name:
+        raise ValueError(f"Unknown project name for path: {path}")
+    run = wandb_api.run(f"//{project_name[0]}/{wandb_id}")
     setting = _setting_from_config(run.config)
     return setting, wandb_id
 
