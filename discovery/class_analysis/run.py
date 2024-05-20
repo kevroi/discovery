@@ -13,6 +13,7 @@ or may look slightly different, though it will always end with a wandb run id st
 """
 
 import functools
+from pyexpat import model
 import wandb
 from typing import Optional
 
@@ -29,14 +30,16 @@ from sklearn import random_projection
 
 _RESULT_STORE = "discovery/class_analysis/results.pkl"
 _WHITELIST_SETTINGS = None  # Do every setting.
+_MAX_NUM_MODELS_TO_PROCESS = -1  # No limit.
+
 
 # Some settings for debugging.
 # _MAX_NUM_MODELS_TO_PROCESS = 2
-_MAX_NUM_MODELS_TO_PROCESS = None
-_RESULT_STORE = "discovery/class_analysis/results_DEBUG2.pkl"
-_WHITELIST_SETTINGS = [
-    Setting(multitask=False, model_type=ModelType.CNN, env_name=EnvName.TwoRooms)
-]
+# _MAX_NUM_MODELS_TO_PROCESS = -1
+# _RESULT_STORE = "discovery/class_analysis/results_DEBUG2.pkl"
+# _WHITELIST_SETTINGS = [
+#     Setting(multitask=False, model_type=ModelType.CNN, env_name=EnvName.TwoRooms)
+# ]
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -82,9 +85,12 @@ _PATH_PREFIX_TO_SETTING = {
     "discovery/experiments/FeatAct_minigrid/models/two_rooms_single_task_cnn/TwoRoomEnv/PPO/": Setting(
         multitask=False, model_type=ModelType.CNN, env_name=EnvName.TwoRooms
     ),
+    "discovery/experiments/FeatAct_atari/models/seaquest_cnn/": Setting(
+        multitask=False, model_type=ModelType.CNN, env_name=EnvName.Seaquest
+    ),
 }
 
-# TODO: this loads the seaquest data when we load the module, which takes long (10+s)
+# TODO: this loads the seaquest data when we load the module, which takes long (10-20s)
 # and is not necessary if we don't analyze seaquest models.
 env_name_to_data_mgr_cls = {
     EnvName.TwoRooms: datasources.MiniGridData(),
@@ -98,6 +104,11 @@ env_name_to_data_mgr_cls = {
     ),
 }
 
+# TODO: this is hardcoded for now.
+env_name_to_feat_dims = {
+    EnvName.TwoRooms: {ModelType.CNN: 32, ModelType.FTA: 640},
+    EnvName.Seaquest: {ModelType.CNN: 512, ModelType.FTA: 10240},
+}
 
 wandb_api = wandb.Api()
 
@@ -297,10 +308,9 @@ def main():
 def add_random_projections(num_seeds: int, all_results: dict[Setting, Data]) -> bool:
     """Adds random projections to the results; updates all_results but does not save."""
     present_envs = {s.env_name for s in all_results}
-    rand_projector_gauss = random_projection.GaussianRandomProjection(n_components=32)
-    rand_projector_sparse = random_projection.SparseRandomProjection(n_components=640)
 
     def run_proj(proj, setting) -> bool:
+        # Figure out how many seeds we want to run.
         print(setting)
         if setting in all_results:
             print(
@@ -310,7 +320,7 @@ def add_random_projections(num_seeds: int, all_results: dict[Setting, Data]) -> 
             print(f"    Need {num_seeds_needed} more.")
         else:
             num_seeds_needed = num_seeds
-            print("    no runs for this setting yet, need {num_seeds_needed} more.")
+            print(f"    no runs for this setting yet, need {num_seeds_needed} more.")
         if num_seeds_needed <= 0:
             print("    skipping -- enough runs already.")
             return False
@@ -334,9 +344,20 @@ def add_random_projections(num_seeds: int, all_results: dict[Setting, Data]) -> 
 
     added_new_run = False
     for env in present_envs:
-        if env == EnvName.Seaquest:
-            print("Skipping Seaquest for now --- parameters not set correctly.")
+        if env not in env_name_to_feat_dims:
+            print()
+            print(f"Skipping {env} for now --- parameters not set correctly.")
+            print()
             continue
+
+        feat_dims = env_name_to_feat_dims[env]
+        rand_projector_gauss = random_projection.GaussianRandomProjection(
+            n_components=feat_dims[ModelType.CNN]
+        )
+        rand_projector_sparse = random_projection.SparseRandomProjection(
+            n_components=feat_dims[ModelType.FTA]
+        )
+
         print("Adding gaussian random projections for", env)
         added_new_run = (
             run_proj(
