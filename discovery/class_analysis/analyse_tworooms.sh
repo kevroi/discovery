@@ -4,5 +4,7 @@ python discovery/class_analysis/run.py \
     --recursive \
     --result_path=discovery/class_analysis/two_rooms_RESULTS.pkl \
     --random_proj_seeds=20 \
-    --ignore_existing \
-    --dry_run
+    --ignore_existing
+
+    # --ignore_existing \
+    # --dry_run
