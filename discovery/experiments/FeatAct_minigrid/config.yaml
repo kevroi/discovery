@@ -1,7 +1,7 @@
 env_name: 'TwoRoomEnv'
 learner: 'PPO'
-project_name: 'generalise_minigrid'
-extra_dirname: 'two_rooms_single_task_cnn'
+project_name: 'two_rooms_newmultitask_cnn'
+extra_dirname: 'two_rooms_newmultitask_cnn'
 timesteps: 1000000
 policy_type: 'CnnPolicy'
 cnn: 'minigrid' # 'nature', 'minigrid', 'minigrid_sp', 'minigrid_hallfeat'
