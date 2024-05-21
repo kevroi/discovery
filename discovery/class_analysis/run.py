@@ -88,6 +88,9 @@ _PATH_PREFIX_TO_SETTING = {
     "discovery/experiments/FeatAct_atari/models/seaquest_cnn/": Setting(
         multitask=False, model_type=ModelType.CNN, env_name=EnvName.Seaquest
     ),
+    "discovery/experiments/FeatAct_minigrid/models/two_rooms_newmultitask_cnn/TwoRoomEnv/PPO": Setting(
+        multitask=True, model_type=ModelType.CNN, env_name=EnvName.TwoRooms
+    ),
 }
 
 # TODO: this loads the seaquest data when we load the module, which takes long (10-20s)
@@ -177,34 +180,69 @@ def _setting_from_config(config: dict) -> Setting:
 
 def _append_or_create(all_results: dict, setting, wandb_id, cur_results):
     """Appends the results to the data for the setting, or creates a new entry."""
-    lin_acc, lin_conf_mat, lin_details = cur_results["linear"]
-    nonlin_acc, nonlin_conf_mat, nonlin_details = cur_results["nonlinear"]
+    lin_acc, lin_sg_acc, lin_non_sg_acc, lin_conf_mat, lin_details = cur_results[
+        "linear"
+    ]
+    nonlin_acc, nonlin_sg_acc, nonlin_non_sg_acc, nonlin_conf_mat, nonlin_details = (
+        cur_results["nonlinear"]
+    )
     if setting in all_results:
         data = all_results[setting]
         data.num_runs += 1
         data.wandb_ids.append(wandb_id)
         data.lin_accuracies.append(lin_acc)
+        data.lin_sg_accuracies.append(lin_sg_acc)
+        data.lin_non_sg_accuracies.append(lin_non_sg_acc)
         data.lin_conf_matrices.append(lin_conf_mat)
         data.lin_acc_mean = np.mean(data.lin_accuracies)
         data.lin_acc_std_err = np.std(data.lin_accuracies) / np.sqrt(data.num_runs)
+        data.lin_sg_acc_mean = np.mean(data.lin_sg_accuracies)
+        data.lin_sg_acc_std_err = np.std(data.lin_sg_accuracies) / np.sqrt(
+            data.num_runs
+        )
+        data.lin_non_sg_acc_mean = np.mean(data.lin_non_sg_accuracies)
+        data.lin_non_sg_acc_std_err = np.std(data.lin_non_sg_accuracies) / np.sqrt(
+            data.num_runs
+        )
+
         data.nonlin_accuracies.append(nonlin_acc)
         data.nonlin_conf_matrices.append(nonlin_conf_mat)
         data.nonlin_acc_mean = np.mean(data.nonlin_accuracies)
         data.nonlin_acc_std_err = np.std(data.nonlin_accuracies) / np.sqrt(
             data.num_runs
         )
+        data.nonlin_sg_acc_mean = np.mean(data.nonlin_sg_accuracies)
+        data.nonlin_sg_acc_std_err = np.std(data.nonlin_sg_accuracies) / np.sqrt(
+            data.num_runs
+        )
+        data.nonlin_non_sg_acc_mean = np.mean(data.nonlin_non_sg_accuracies)
+        data.nonlin_non_sg_acc_std_err = np.std(
+            data.nonlin_non_sg_accuracies
+        ) / np.sqrt(data.num_runs)
     else:
         all_results[setting] = Data(
             wandb_ids=[wandb_id],
             num_runs=1,
             lin_accuracies=[lin_acc],
+            lin_sg_accuracies=[lin_sg_acc],
+            lin_non_sg_accuracies=[lin_non_sg_acc],
             lin_conf_matrices=[lin_conf_mat],
             lin_acc_mean=lin_acc,
             lin_acc_std_err=0.0,
+            lin_sg_acc_mean=lin_sg_acc,
+            lin_sg_acc_std_err=0.0,
+            lin_non_sg_acc_mean=lin_non_sg_acc,
+            lin_non_sg_acc_std_err=0.0,
             nonlin_accuracies=[nonlin_acc],
+            nonlin_sg_accuracies=[nonlin_sg_acc],
+            nonlin_non_sg_accuracies=[nonlin_non_sg_acc],
             nonlin_conf_matrices=[nonlin_conf_mat],
             nonlin_acc_mean=nonlin_acc,
             nonlin_acc_std_err=0.0,
+            nonlin_sg_acc_mean=nonlin_sg_acc,
+            nonlin_sg_acc_std_err=0.0,
+            nonlin_non_sg_acc_mean=nonlin_non_sg_acc,
+            nonlin_non_sg_acc_std_err=0.0,
         )
 
 
@@ -281,7 +319,8 @@ def main():
                 except ValueError as e:
                     print("SKIPPING -- error: ", dir_entry.name)
                     skipped_due_to_error.append((rel_path, e))
-                    continue
+                    raise e
+                    # continue
                 if maybe_new_setting is not None:
                     num_new_settings += 1
                     # We save right away if we have a new setting;

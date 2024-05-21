@@ -52,7 +52,7 @@ class DataSource(abc.ABC):
 
 class MiniGridData(DataSource):
 
-    def __init__(self, variants):
+    def __init__(self, variants=[3]):
         obss, images, labels, coords_seq, dirs_seq = self._create_dataset(variants)
         self.obss = np.stack(obss)
         self.images = np.stack(images)
