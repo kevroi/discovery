@@ -1,6 +1,6 @@
 env_name: "ALE/Pong-v5"
 learner: 'PPO'
-project_name: 'PPO_on_Atari'
+project_name: 'PPO_on_Atari'  #  wandb and saved models dir
 timesteps: 10000000
 frame_stack: 4
 feat_extractor: 'cnn'

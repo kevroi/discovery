@@ -133,21 +133,24 @@ def main(args):
                 log_graph=True,
             )
 
-    log_directory = f"discovery/experiments/FeatAct_atari/models/dir_{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
+    filename_id = (
+        f"{hparam_yaml['project_name']}/{hparam_yaml['env_name']}/"
+        f"{hparam_yaml['learner']}/{run_id}"
+    )
+    snapshot_dir = f"discovery/experiments/FeatAct_atari/model_snapshots/{filename_id}"
     snapshot_callback = SnapshotCallback(
-        check_freq=500_000 // hparam_yaml["n_envs"], log_dir=log_directory, verbose=1
+        check_freq=500_000 // hparam_yaml["n_envs"],
+        log_dir=snapshot_dir,
+        verbose=1,
     )
 
     print(
         f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
     model.learn(total_timesteps=hparam_yaml["timesteps"], callback=snapshot_callback)
-    model.save(
-        f"discovery/experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
-    )
-    print(
-        f"Model saved at experiments/FeatAct_atari/models/{hparam_yaml['learner']}_{hparam_yaml['env_name']}_{run_id}"
-    )
+    save_loc = f"discovery/experiments/FeatAct_atari/models/{filename_id}"
+    model.save(save_loc)
+    print(f"Model saved at {save_loc}")
 
     # if hparam_yaml["analyse_rep"]:
     #     from analyse_rep import get_feats
