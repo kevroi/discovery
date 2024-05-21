@@ -174,6 +174,13 @@ def process_saved_model(data_manager: datasources.DataSource, model_path: str) -
     return process_model(data_manager, obs_to_feats)
 
 
+def test_saved_model(data_manager, clf, obs_to_feats_fn):
+    obss, images, labels = data_manager.get_data()
+    feats = obs_to_feats_fn(obss)
+    acc, conf_mat = evaluate(clf, feats, labels, print_results=True)
+    return acc, conf_mat
+
+
 def process_model(
     data_manager: datasources.DataSource,
     obs_to_feats: Callable[[Iterable], list],

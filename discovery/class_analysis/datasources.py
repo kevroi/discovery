@@ -52,8 +52,8 @@ class DataSource(abc.ABC):
 
 class MiniGridData(DataSource):
 
-    def __init__(self):
-        obss, images, labels, coords_seq, dirs_seq = self._create_dataset()
+    def __init__(self, variants):
+        obss, images, labels, coords_seq, dirs_seq = self._create_dataset(variants)
         self.obss = np.stack(obss)
         self.images = np.stack(images)
         self.labels = np.stack(labels)
@@ -80,34 +80,37 @@ class MiniGridData(DataSource):
             print(i)
         torch.set_printoptions()  # Resets them.
 
-    def _make_env_at_pos(self, position, direction):
+    def _make_env_at_pos(self, position, direction, variant):
         env = TwoRoomEnv(
-            render_mode="rgb_array", agent_start_pos=position, agent_start_dir=direction
+            render_mode="rgb_array",
+            agent_start_pos=position,
+            agent_start_dir=direction,
+            hallway_pos=(variant, 7),
         )
         env = FullyObsWrapper(env)
         env = ImgObsWrapper(env)
         env = Monitor(env)
         return env
 
-    def _create_dataset(self):
-        hallway = (7, 3)
+    def _create_dataset(self, variants):
+        hallways = [(7, v) for v in variants]
         xs = range(1, 14)
         ys = range(1, 7)
         xys = itertools.product(xs, ys)
         coords_seq = []
         dirs_seq = []
         dirs = range(4)
-        all_data = itertools.product(xys, dirs)
+        all_data = itertools.product(xys, dirs, variants)
         images = []
         obss = []
         labels = []
-        for pos_, dir_ in all_data:
-            env = self._make_env_at_pos(position=pos_, direction=dir_)
+        for pos_, dir_, var_ in all_data:
+            env = self._make_env_at_pos(position=pos_, direction=dir_, variant=var_)
             try:
                 # obss.append(env.reset())
                 obss.append(env.reset()[0])  # Just the observation.
                 images.append(env.render())
-                labels.append(bool(pos_ == hallway))
+                labels.append(bool(pos_ == (7, var_)))
                 coords_seq.append(pos_)
                 dirs_seq.append(dir_)
             except AssertionError:
