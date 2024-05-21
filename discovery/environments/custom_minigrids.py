@@ -25,7 +25,14 @@ class TwoRoomEnv(MiniGridEnv):
         agent_start_dir=0,
         hallway_pos=(3, 7),
         random_hallway=False,  # if True, hallway position is randomly generated (we uniformly sample from a distribution of TwoRoomEnvs)
-        num_variants: int = None,
+        variants=[
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+        ],  # Possible hallway locatios to sample from if random_hallway is True
         max_steps: int = None,
         **kwargs,
     ):
@@ -33,14 +40,11 @@ class TwoRoomEnv(MiniGridEnv):
         self.agent_start_dir = agent_start_dir
         self.hallway_pos = hallway_pos
         self.random_hallway = random_hallway
+        self.variants = variants
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
         # Randomly place hallway
         if self.random_hallway:
-            if num_variants is None:
-                self.num_variants = height - 2  # number of different TwoRoomEnvs
-            else:
-                self.num_variants = num_variants
             self.setup_random_hallway()
 
         super().__init__(
@@ -89,11 +93,8 @@ class TwoRoomEnv(MiniGridEnv):
         return obs
 
     def setup_random_hallway(self):
-        self.variant_idx = random.randint(1, self.num_variants)
-        self.hallway_pos = (
-            self.variant_idx,
-            self.hallway_pos[1],
-        )
+        self.variant_idx = random.choice(self.variants)
+        self.hallway_pos = (self.variant_idx, 7)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
