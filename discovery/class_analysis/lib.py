@@ -131,11 +131,15 @@ def evaluate(clf, feats, labels, print_results=False):
     y_pred_np = y_pred.detach().numpy().round()
     acc = metrics.accuracy_score(labels, y_pred_np)
     c_m = metrics.confusion_matrix(labels, y_pred_np)
+    sg_acc = c_m[1, 1] / (c_m[1, 1] + c_m[1, 0])
+    non_sg_acc = c_m[0, 0] / (c_m[0, 0] + c_m[0, 1])
     if print_results:
         print("Accuracy: ", acc)
+        print("SG Accuracy: ", sg_acc)
+        print("Non SG Accuracy: ", non_sg_acc)
         print("Confusion Matrix: ")
         print(c_m)
-    return acc, c_m
+    return acc, sg_acc, non_sg_acc, c_m
 
 
 def obs_to_feats_from_model(model, obss):
@@ -177,8 +181,8 @@ def process_saved_model(data_manager: datasources.DataSource, model_path: str) -
 def test_saved_model(data_manager, clf, obs_to_feats_fn):
     obss, images, labels = data_manager.get_data()
     feats = obs_to_feats_fn(obss)
-    acc, conf_mat = evaluate(clf, feats, labels, print_results=True)
-    return acc, conf_mat
+    acc, prec, recall, conf_mat = evaluate(clf, feats, labels, print_results=True)
+    return acc, prec, recall, conf_mat
 
 
 def process_model(
@@ -199,10 +203,16 @@ def process_model(
     results = {}
     for clf_name, clf in classifiers.items():
         unused_best_acc = train_classifier(clf, feats, labels, disable_tqdm=True)
-        acc, conf_mat = evaluate(clf, feats, labels)
+        acc, sg_acc, non_sg_acc, conf_mat = evaluate(clf, feats, labels)
         details = {
             "classifier": clf,
             "obs_to_feats": obs_to_feats,
         }
-        results[clf_name] = (float(acc), conf_mat, details)
+        results[clf_name] = (
+            float(acc),
+            float(sg_acc),
+            float(non_sg_acc),
+            conf_mat,
+            details,
+        )
     return results
