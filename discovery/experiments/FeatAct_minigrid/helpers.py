@@ -29,7 +29,7 @@ def make_env(config):
             config["env_name"],
             render_mode=config["render_mode"],
             random_hallway=config["random_hallway"],
-            num_variants=config["num_variants"],
+            variants=config["variants"],
         )
         env = FullyObsWrapper(env)
         if config["cnn"] == "minigrid_hallfeat":
