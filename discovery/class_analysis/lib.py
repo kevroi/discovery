@@ -1,11 +1,12 @@
 """This module contains the classification analysis functions."""
 
+from tkinter import W
 from typing import Callable, Union, Type
 from collections.abc import Iterable
 import functools
 
 import itertools
-from sklearn.metrics import confusion_matrix
+from sklearn import metrics
 
 import numpy as np
 
@@ -102,6 +103,8 @@ def train_classifier(
                 # update weights
                 optimizer.step()
                 # print progress
+                # TODO: the accuracy caculation is WRONG ------
+                # see evaluate
                 acc = (y_pred.round() == y_batch).float().mean()
                 bar.set_postfix(loss=float(final_loss), acc=float(acc))
         # # evaluate accuracy at end of each epoch
@@ -125,9 +128,10 @@ def evaluate(clf, feats, labels, print_results=False):
     y_pred = predictions(clf, feats)
     y = torch.tensor(labels).float()
 
-    acc = (y_pred.round() == y).float().mean()
-    y_pred_np = y_pred.detach().numpy()
-    c_m = confusion_matrix(labels, y_pred_np.round())
+    # acc_bad = (y_pred.round() == y).float().mean()
+    y_pred_np = y_pred.detach().numpy().round()
+    acc = metrics.accuracy_score(labels, y_pred_np)
+    c_m = metrics.confusion_matrix(labels, y_pred_np)
     if print_results:
         print("Accuracy: ", acc)
         print("Confusion Matrix: ")

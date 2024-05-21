@@ -37,9 +37,9 @@ _MAX_NUM_MODELS_TO_PROCESS = -1  # No limit.
 # _MAX_NUM_MODELS_TO_PROCESS = 2
 # _MAX_NUM_MODELS_TO_PROCESS = -1
 # _RESULT_STORE = "discovery/class_analysis/results_DEBUG2.pkl"
-# _WHITELIST_SETTINGS = [
-#     Setting(multitask=False, model_type=ModelType.CNN, env_name=EnvName.TwoRooms)
-# ]
+_WHITELIST_SETTINGS = [
+    Setting(multitask=False, model_type=ModelType.CNN, env_name=EnvName.Seaquest)
+]
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
