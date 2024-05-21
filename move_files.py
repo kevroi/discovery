@@ -38,6 +38,7 @@ paths_to_fetch = [
     "discovery/class_analysis/results.pkl",
     "discovery/experiments/FeatAct_minigrid/model_snapshots/",
     "discovery/experiments/FeatAct_minigrid/models/",
+    "discovery/experiments/FeatAct_atari/models/",
 ]
 
 
