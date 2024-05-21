@@ -228,7 +228,7 @@ if __name__ == "__main__":
         "--feat_dim", type=int, default=None, help="Dimension of feature space."
     )
     parser.add_argument(
-        "--device", type=str, default=None, help="Device to run on, e.g. 'cuda:0'."
+        "--device", type=str, default="cpu", help="Device to run on, e.g. 'cuda:0'."
     )
     parser.add_argument(
         "--lr",
