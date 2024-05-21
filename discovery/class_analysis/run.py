@@ -83,11 +83,18 @@ _PATH_PREFIX_TO_PROJECT_NAME = {
     "discovery/experiments/FeatAct_atari/models/PPO_ALE": "//szepi/PPO_on_Atari",
 }
 
-_DEPRECATED_DIRECTORIES = [
+# fmt: off
+_EXCLUDED_DIRECTORIES = [
     # Cannot have trailing slashes.
+
+    # these are old models that we don't need to analyze anymore. They had all task locations.
     "discovery/experiments/FeatAct_minigrid/models/two_rooms_multi_task_cnn/TwoRoomEnv/PPO",
     "discovery/experiments/FeatAct_minigrid/models/multi_task_fta/TwoRoomEnv/PPO",
+
+    # Snapshot directories for Atari.
+    "discovery/experiments/FeatAct_atari/models/dir_PPO_ALE",
 ]
+# fmt: on
 
 _PATH_PREFIX_TO_SETTING = {
     # "discovery/experiments/FeatAct_minigrid/models/multi_task_fta/TwoRoomEnv/PPO/": Setting(
@@ -160,8 +167,16 @@ def extract_setting(path: str, name: str) -> tuple[Setting, str]:
     if len(parts) != 2:
         raise ValueError(f"Unexpected name: {name}; expected wandb_id.zip")
     wandb_id = parts[0]
-    if wandb_id.startswith("PPO_TwoRoomEnv_"):
-        wandb_id = wandb_id[len("PPO_TwoRoomEnv_") :]
+    potential_prefixes_to_remove = [
+        "PPO_TwoRoomEnv_",
+        "Pong-v5_",
+        "Seaquest-v5_",
+        "MsPacman-v5_",
+    ]
+    for prefix in potential_prefixes_to_remove:
+        if wandb_id.startswith(prefix):
+            wandb_id = wandb_id[len(prefix) :]
+            break
 
     # First we check if the path is mapped to a setting explictly.
     setting = [s for p, s in _PATH_PREFIX_TO_SETTING.items() if path.startswith(p)]
@@ -187,8 +202,11 @@ def _setting_from_config(config: dict) -> Setting:
     if config["env_name"] == "TwoRoomEnv":
         env_name = EnvName.TwoRooms
         multitask = config["random_hallway"]
+    elif config["env_name"] == "ALE/Seaquest-v5":
+        env_name = EnvName.Seaquest
+        multitask = False
     else:
-        raise NotImplementedError(f"Unknown env_name: {env_name}")
+        raise ValueError(f"Unknown env_name: {config['env_name']}")
     if config["activation"] == "fta":
         model_type = ModelType.FTA
     else:
@@ -322,7 +340,7 @@ def main():
     # modified_settings = []
     num_new_settings = 0
 
-    exclude_dirs = [filesys.make_abs_path_in_root(d) for d in _DEPRECATED_DIRECTORIES]
+    exclude_dirs = [filesys.make_abs_path_in_root(d) for d in _EXCLUDED_DIRECTORIES]
     abs_load_dir_path = os.path.abspath(args.load_dir)
     if args.recursive:
         all_files = scantree(abs_load_dir_path, exclude_dirs)

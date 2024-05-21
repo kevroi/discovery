@@ -4,6 +4,9 @@ discovery/experiments/FeatAct_minigrid/models
 old_minigrid_models
 datasets/AAD/clean/SeaquestNoFrameskip-v4/
 
+plots/classifier_res/
+
+
 *.pkl
 
 venv/
