@@ -1,7 +1,6 @@
 """This module contains the classification analysis functions."""
 
-from tkinter import W
-from typing import Callable, Union, Type
+from typing import Callable, Union
 from collections.abc import Iterable
 import functools
 
