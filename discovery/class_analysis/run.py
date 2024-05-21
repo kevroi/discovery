@@ -12,8 +12,6 @@ or may look slightly different, though it will always end with a wandb run id st
 
 """
 
-import functools
-from pyexpat import model
 import wandb
 from typing import Optional
 
@@ -58,6 +56,11 @@ parser.add_argument(
     help="Effectively clears all previous results!",
 )
 parser.add_argument(
+    "--dry_run",
+    action="store_true",  # set to false if we do not pass this argument
+    help="Don't actually process the files, just print what would be done.",
+)
+parser.add_argument(
     "--result_path",
     type=str,
     default=_RESULT_STORE,
@@ -73,14 +76,28 @@ parser.add_argument(
 
 # To get the config from wandb, we need to know the project name. This is
 # not currently encoded in the path, so we need to keep a mapping.
+# TODO: test whether things still work with the //szepi/prefix on project names.
 _PATH_PREFIX_TO_PROJECT_NAME = {
-    "discovery/experiments/FeatAct_minigrid/models/single_task_fta/TwoRoomEnv/PPO/": "TwoRoomsSingleTask2",
-    "discovery/experiments/FeatAct_minigrid/models/two_rooms_multi_task_cnn/TwoRoomEnv/PPO/": "two_rooms_multi_task_cnn",
+    "discovery/experiments/FeatAct_minigrid/models/single_task_fta/TwoRoomEnv/PPO": "//szepi/TwoRoomsSingleTask2",
+    "discovery/experiments/FeatAct_minigrid/models/two_rooms_multi_task_cnn/TwoRoomEnv/PPO": "//szepi/two_rooms_multi_task_cnn",
+    "discovery/experiments/FeatAct_atari/models/PPO_ALE": "//szepi/PPO_on_Atari",
 }
 
+_DEPRECATED_DIRECTORIES = [
+    # Cannot have trailing slashes.
+    "discovery/experiments/FeatAct_minigrid/models/two_rooms_multi_task_cnn/TwoRoomEnv/PPO",
+    "discovery/experiments/FeatAct_minigrid/models/multi_task_fta/TwoRoomEnv/PPO",
+]
+
 _PATH_PREFIX_TO_SETTING = {
-    "discovery/experiments/FeatAct_minigrid/models/multi_task_fta/TwoRoomEnv/PPO/": Setting(
+    # "discovery/experiments/FeatAct_minigrid/models/multi_task_fta/TwoRoomEnv/PPO/": Setting(
+    #     multitask=True, model_type=ModelType.FTA, env_name=EnvName.TwoRooms
+    # ),
+    "discovery/experiments/FeatAct_minigrid/models/two_rooms_realmultitask_fta/TwoRoomEnv/PPO/": Setting(
         multitask=True, model_type=ModelType.FTA, env_name=EnvName.TwoRooms
+    ),
+    "discovery/experiments/FeatAct_minigrid/models/two_rooms_realmultitask_cnn/TwoRoomEnv/PPO/": Setting(
+        multitask=True, model_type=ModelType.CNN, env_name=EnvName.TwoRooms
     ),
     "discovery/experiments/FeatAct_minigrid/models/two_rooms_single_task_cnn/TwoRoomEnv/PPO/": Setting(
         multitask=False, model_type=ModelType.CNN, env_name=EnvName.TwoRooms
@@ -145,6 +162,7 @@ def extract_setting(path: str, name: str) -> tuple[Setting, str]:
     wandb_id = parts[0]
     if wandb_id.startswith("PPO_TwoRoomEnv_"):
         wandb_id = wandb_id[len("PPO_TwoRoomEnv_") :]
+
     # First we check if the path is mapped to a setting explictly.
     setting = [s for p, s in _PATH_PREFIX_TO_SETTING.items() if path.startswith(p)]
     if setting:
@@ -155,7 +173,11 @@ def extract_setting(path: str, name: str) -> tuple[Setting, str]:
     ]
     if not project_name:
         raise ValueError(f"Unknown project name for path: {path}")
-    run = wandb_api.run(f"//{project_name[0]}/{wandb_id}")
+    project_name = project_name[0]
+    if project_name.endswith("/"):
+        project_name = project_name[:-1]
+    assert project_name.startswith("//")
+    run = wandb_api.run(f"{project_name}/{wandb_id}")
     setting = _setting_from_config(run.config)
     return setting, wandb_id
 
@@ -247,7 +269,7 @@ def _append_or_create(all_results: dict, setting, wandb_id, cur_results):
 
 
 def process_model_at_path(
-    model_path: str, file_name: str, all_results: dict[Setting, Data]
+    model_path: str, file_name: str, all_results: dict[Setting, Data], dry_run=False
 ) -> Optional[Setting]:
     """Updates all_results with an analysis of the model at model_path."""
     # See the comment at the top of the file for the format of the path.
@@ -258,6 +280,10 @@ def process_model_at_path(
     print("PROCESSING:", model_path)
     if setting in all_results and wandb_id in all_results[setting].wandb_ids:
         print("    skipping -- already processed.")
+        return None
+
+    if dry_run:
+        print("    dry run -- would process this.")
         return None
 
     results = lib.process_saved_model(
@@ -296,13 +322,18 @@ def main():
     # modified_settings = []
     num_new_settings = 0
 
+    exclude_dirs = [filesys.make_abs_path_in_root(d) for d in _DEPRECATED_DIRECTORIES]
+    abs_load_dir_path = os.path.abspath(args.load_dir)
     if args.recursive:
-        all_files = scantree(args.load_dir)
+        all_files = scantree(abs_load_dir_path, exclude_dirs)
     else:
-        all_files = os.scandir(args.load_dir)
+        if abs_load_dir_path in exclude_dirs:
+            print("The directory you provided is deprecated and will be skipped.")
+            return
+        all_files = os.scandir(abs_load_dir_path)
 
     skipped_due_to_error = []
-    if args.load_dir is not None:
+    if abs_load_dir_path is not None:
         for dir_entry in tqdm.tqdm(list(all_files)):
             if dir_entry.is_dir():
                 print("SKIPPING -- dir:", dir_entry.name)
@@ -314,13 +345,13 @@ def main():
                 rel_path = _make_path_relative(dir_entry.path)
                 try:
                     maybe_new_setting = process_model_at_path(
-                        rel_path, dir_entry.name, all_results
+                        rel_path, dir_entry.name, all_results, args.dry_run
                     )
                 except ValueError as e:
                     print("SKIPPING -- error: ", dir_entry.name)
                     skipped_due_to_error.append((rel_path, e))
-                    raise e
-                    # continue
+                    # raise e
+                    continue
                 if maybe_new_setting is not None:
                     num_new_settings += 1
                     # We save right away if we have a new setting;
@@ -331,9 +362,11 @@ def main():
                     if num_new_settings == _MAX_NUM_MODELS_TO_PROCESS:
                         break
 
-    added_new_runs = add_random_projections(args.random_proj_seeds, all_results)
+    added_new_runs = add_random_projections(
+        args.random_proj_seeds, all_results, args.dry_run
+    )
 
-    if added_new_runs:
+    if added_new_runs and not args.dry_run:
         with open(args.result_path, "wb") as f:
             pickle.dump(all_results, f)
 
@@ -345,7 +378,9 @@ def main():
         print("      ", e)
 
 
-def add_random_projections(num_seeds: int, all_results: dict[Setting, Data]) -> bool:
+def add_random_projections(
+    num_seeds: int, all_results: dict[Setting, Data], dry_run: bool
+) -> bool:
     """Adds random projections to the results; updates all_results but does not save."""
     present_envs = {s.env_name for s in all_results}
 
@@ -373,6 +408,9 @@ def add_random_projections(num_seeds: int, all_results: dict[Setting, Data]) -> 
             return proj.fit_transform(batch_of_flat)
 
         for seed in tqdm.trange(num_seeds_needed):
+            if dry_run:
+                print("    dry run -- would process this.")
+                continue
             results = lib.process_model(
                 env_name_to_data_mgr_cls[env],
                 obs_to_feats,
@@ -435,12 +473,17 @@ def _make_path_relative(path: str) -> str:
     return path
 
 
-def scantree(path):
+def scantree(abs_path, exclude_dirs_abs_paths=None):
     """Recursively yield DirEntry objects for given directory."""
-    # from https://stackoverflow.com/a/33135143
-    for entry in os.scandir(path):
+    # Modified from https://stackoverflow.com/a/33135143
+    if exclude_dirs_abs_paths is None:
+        exclude_dirs_abs_paths = []
+    for entry in os.scandir(abs_path):
         if entry.is_dir(follow_symlinks=False):
-            yield from scantree(entry.path)
+            if entry.path in exclude_dirs_abs_paths:
+                print("Skipping excluded dir:", entry.path)
+                continue
+            yield from scantree(entry.path, exclude_dirs_abs_paths)
         else:
             yield entry
 
