@@ -1,6 +1,4 @@
-from typing import Callable, Union
-from collections.abc import Iterable
-import functools
+from typing import Optional
 
 import abc
 import cv2
@@ -121,11 +119,16 @@ class MiniGridData(DataSource):
 
 class SeaquestData(DataSource):
 
-    def __init__(self, obs_filepath: str, label_filepath: str):
+    def __init__(
+        self, obs_filepath: str, label_filepath: str, cutoff: Optional[int] = None
+    ):
         with h5py.File(obs_filepath, "r") as f:
             image_sequence = f["state"][...]
         labels = np.load(label_filepath)
 
+        if cutoff is not None:
+            image_sequence = image_sequence[:cutoff]
+            labels = labels[:cutoff]
         self.obss = _pre_process_atari(image_sequence)  # pre_processed_states =
         labels = _prerocess_labels(labels)
         self.labels = _stack_labels(labels)  # stacked_labels =
