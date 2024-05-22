@@ -13,7 +13,7 @@ or may look slightly different, though it will always end with a wandb run id st
 """
 
 import wandb
-from typing import Optional
+from typing import Optional, Union
 
 import argparse
 import os
@@ -21,8 +21,15 @@ import numpy as np
 import tqdm
 import pickle
 from discovery.utils import filesys
-from discovery.class_analysis import lib, datasources
-from discovery.class_analysis.datatypes import Setting, Data, EnvName, ModelType
+from discovery.class_analysis import lib, datasources, run_lib
+from discovery.class_analysis.datatypes import (
+    Setting,
+    Data,
+    EnvName,
+    ModelType,
+    AllTrainTestStats,
+    BaseTrainTestStats,
+)
 from sklearn import random_projection
 
 
@@ -72,6 +79,13 @@ parser.add_argument(
     default=0,
     help="The minimum number of random projections analyzed for each environment.",
 )
+parser.add_argument(
+    "--analysis_type",
+    type=str,
+    choices=("minigrid_train", "minigrid_transfer", "seaquest"),
+    required=True,
+    help="Which version of the analysis to run.",
+)
 
 
 # To get the config from wandb, we need to know the project name. This is
@@ -120,7 +134,11 @@ _PATH_PREFIX_TO_SETTING = {
 # TODO: this loads the seaquest data when we load the module, which takes long (10-20s)
 # and is not necessary if we don't analyze seaquest models.
 env_name_to_data_mgr_cls = {
-    EnvName.TwoRooms: datasources.MiniGridData(),
+    EnvName.TwoRooms: {
+        "single_task": datasources.MiniGridData(),
+        "transfer_train": datasources.MiniGridData([1, 2, 4, 6]),
+        "transfer_test": datasources.MiniGridData([3, 5]),
+    },
     EnvName.Seaquest: datasources.SeaquestData(
         obs_filepath=filesys.make_abs_path_in_root(
             "datasets/AAD/clean/SeaquestNoFrameskip-v4/episode(1).hdf5"
@@ -139,21 +157,6 @@ env_name_to_feat_dims = {
 }
 
 wandb_api = wandb.Api()
-
-
-def load_existing_results(result_path: str):
-    """Returns the existing results, or an empty dict if there are none."""
-    try:
-        with open(result_path, "rb") as f:
-            existing_results = pickle.load(f)
-    except FileNotFoundError:
-        existing_results = {}
-        print(
-            "There is no results file at",
-            os.path.join(os.getcwd(), result_path),
-            "\nStarting a new results file!",
-        )
-    return existing_results
 
 
 def extract_setting(path: str, name: str) -> tuple[Setting, str]:
@@ -218,76 +221,12 @@ def _setting_from_config(config: dict) -> Setting:
     )
 
 
-def _append_or_create(all_results: dict, setting, wandb_id, cur_results):
-    """Appends the results to the data for the setting, or creates a new entry."""
-    lin_acc, lin_sg_acc, lin_non_sg_acc, lin_conf_mat, lin_details = cur_results[
-        "linear"
-    ]
-    nonlin_acc, nonlin_sg_acc, nonlin_non_sg_acc, nonlin_conf_mat, nonlin_details = (
-        cur_results["nonlinear"]
-    )
-    if setting in all_results:
-        data = all_results[setting]
-        data.num_runs += 1
-        data.wandb_ids.append(wandb_id)
-        data.lin_accuracies.append(lin_acc)
-        data.lin_sg_accuracies.append(lin_sg_acc)
-        data.lin_non_sg_accuracies.append(lin_non_sg_acc)
-        data.lin_conf_matrices.append(lin_conf_mat)
-        data.lin_acc_mean = np.mean(data.lin_accuracies)
-        data.lin_acc_std_err = np.std(data.lin_accuracies) / np.sqrt(data.num_runs)
-        data.lin_sg_acc_mean = np.mean(data.lin_sg_accuracies)
-        data.lin_sg_acc_std_err = np.std(data.lin_sg_accuracies) / np.sqrt(
-            data.num_runs
-        )
-        data.lin_non_sg_acc_mean = np.mean(data.lin_non_sg_accuracies)
-        data.lin_non_sg_acc_std_err = np.std(data.lin_non_sg_accuracies) / np.sqrt(
-            data.num_runs
-        )
-
-        data.nonlin_accuracies.append(nonlin_acc)
-        data.nonlin_conf_matrices.append(nonlin_conf_mat)
-        data.nonlin_acc_mean = np.mean(data.nonlin_accuracies)
-        data.nonlin_acc_std_err = np.std(data.nonlin_accuracies) / np.sqrt(
-            data.num_runs
-        )
-        data.nonlin_sg_acc_mean = np.mean(data.nonlin_sg_accuracies)
-        data.nonlin_sg_acc_std_err = np.std(data.nonlin_sg_accuracies) / np.sqrt(
-            data.num_runs
-        )
-        data.nonlin_non_sg_acc_mean = np.mean(data.nonlin_non_sg_accuracies)
-        data.nonlin_non_sg_acc_std_err = np.std(
-            data.nonlin_non_sg_accuracies
-        ) / np.sqrt(data.num_runs)
-    else:
-        all_results[setting] = Data(
-            wandb_ids=[wandb_id],
-            num_runs=1,
-            lin_accuracies=[lin_acc],
-            lin_sg_accuracies=[lin_sg_acc],
-            lin_non_sg_accuracies=[lin_non_sg_acc],
-            lin_conf_matrices=[lin_conf_mat],
-            lin_acc_mean=lin_acc,
-            lin_acc_std_err=0.0,
-            lin_sg_acc_mean=lin_sg_acc,
-            lin_sg_acc_std_err=0.0,
-            lin_non_sg_acc_mean=lin_non_sg_acc,
-            lin_non_sg_acc_std_err=0.0,
-            nonlin_accuracies=[nonlin_acc],
-            nonlin_sg_accuracies=[nonlin_sg_acc],
-            nonlin_non_sg_accuracies=[nonlin_non_sg_acc],
-            nonlin_conf_matrices=[nonlin_conf_mat],
-            nonlin_acc_mean=nonlin_acc,
-            nonlin_acc_std_err=0.0,
-            nonlin_sg_acc_mean=nonlin_sg_acc,
-            nonlin_sg_acc_std_err=0.0,
-            nonlin_non_sg_acc_mean=nonlin_non_sg_acc,
-            nonlin_non_sg_acc_std_err=0.0,
-        )
-
-
 def process_model_at_path(
-    model_path: str, file_name: str, all_results: dict[Setting, Data], dry_run=False
+    model_path: str,
+    file_name: str,
+    all_results: Union[dict[Setting, Data], dict[Setting, AllTrainTestStats]],
+    analysis_type: str,
+    dry_run=False,
 ) -> Optional[Setting]:
     """Updates all_results with an analysis of the model at model_path."""
     # See the comment at the top of the file for the format of the path.
@@ -304,17 +243,85 @@ def process_model_at_path(
         print("    dry run -- would process this.")
         return None
 
-    results = lib.process_saved_model(
-        env_name_to_data_mgr_cls[setting.env_name], model_path
-    )
-    print("    linear acc:", results["linear"][0])
-    print("    nonlin acc:", results["nonlinear"][0])
-    _append_or_create(all_results, setting, wandb_id, results)
+    if incompatible_setting(setting.env_name, analysis_type):
+        print("    skipping -- incompatible setting.")
+        return None
+
+    # So hacky..
+    data_mgr = env_name_to_data_mgr_cls[setting.env_name]
+    if isinstance(data_mgr, dict):
+        # We can use any variant here..
+        data_mgr = data_mgr["single_task"]
+
+    obs_to_feats_fn = lib.get_obs_to_feats_fn(data_mgr.obs_preprocessor, model_path)
+    gather_results(all_results, setting, wandb_id, obs_to_feats_fn, analysis_type)
+
     return setting
+
+
+def gather_results(all_results, setting, wandb_id, obs_to_feats_fn, analysis_type):
+
+    if analysis_type == "minigrid_train":
+        results = lib.train_classifier_for_extractor(
+            env_name_to_data_mgr_cls[setting.env_name]["single_task"], obs_to_feats_fn
+        )
+        print("    TRAIN linear acc:", results["linear"][0].acc)
+        print("    TRAIN nonlin acc:", results["nonlinear"][0].acc)
+        run_lib.append_or_create(all_results, setting, wandb_id, results)
+
+    elif analysis_type == "seaquest":
+        results = lib.train_classifier_for_extractor(
+            env_name_to_data_mgr_cls[setting.env_name],
+            obs_to_feats_fn,
+            test_size=0.00001,
+            # test_size=0.2,
+        )
+        print("    TRAIN linear acc:", results["linear"][0].acc)
+        print("    TRAIN nonlin acc:", results["nonlinear"][0].acc)
+        print("    TEST linear acc:", results["linear"][1].acc)
+        print("    TEST nonlin acc:", results["nonlinear"][1].acc)
+        cur_results = BaseTrainTestStats(
+            lin_train=results["linear"][0],
+            lin_test=results["linear"][1],
+            nonlin_train=results["nonlinear"][0],
+            nonlin_test=results["nonlinear"][1],
+        )
+        run_lib.append_or_create_V2(all_results, setting, wandb_id, cur_results)
+
+    elif analysis_type == "minigrid_transfer":
+        train_results = lib.train_classifier_for_extractor(
+            env_name_to_data_mgr_cls[setting.env_name]["transfer_train"],
+            obs_to_feats_fn,
+        )
+        print("    TRAIN linear acc:", train_results["linear"][0].acc)
+        print("    TRAIN nonlin acc:", train_results["nonlinear"][0].acc)
+
+        eval_data_source = env_name_to_data_mgr_cls[setting.env_name]["transfer_test"]
+        transfer_results = {}
+        for key, (_, _, details) in train_results.keys():
+            transfer_results[key] = lib.evaluate_extractor(
+                eval_data_source, details["classifier"], details["obs_to_feats"]
+            )
+        print("    TRANSFER linear acc:", transfer_results["linear"].acc)
+        print("    TRANSFER nonlin acc:", transfer_results["nonlinear"].acc)
+
+        cur_results = BaseTrainTestStats(
+            lin_train=train_results["linear"][0],
+            lin_test=transfer_results["linear"],
+            nonlin_train=train_results["nonlinear"][0],
+            nonlin_test=transfer_results["nonlinear"],
+        )
+        run_lib.append_or_create_V2(all_results, setting, wandb_id, cur_results)
+    else:
+        raise ValueError(f"Unknown analysis type: {analysis_type}")
 
 
 def main():
     args = parser.parse_args()
+    print("Running with args:\n", args)
+    print()
+    print()
+
     filesys.set_directory_in_project()
 
     # The strategy of this script:
@@ -333,9 +340,9 @@ def main():
 
     if args.ignore_existing:
         # We pretend there were no existing results.
-        all_results = {}
+        all_results: Union[dict[Setting, Data], dict[Setting, AllTrainTestStats]] = {}
     else:
-        all_results = load_existing_results(args.result_path)
+        all_results = run_lib.load_existing_results(args.result_path)
 
     # modified_settings = []
     num_new_settings = 0
@@ -343,7 +350,7 @@ def main():
     exclude_dirs = [filesys.make_abs_path_in_root(d) for d in _EXCLUDED_DIRECTORIES]
     abs_load_dir_path = os.path.abspath(args.load_dir)
     if args.recursive:
-        all_files = scantree(abs_load_dir_path, exclude_dirs)
+        all_files = run_lib.scantree(abs_load_dir_path, exclude_dirs)
     else:
         if abs_load_dir_path in exclude_dirs:
             print("The directory you provided is deprecated and will be skipped.")
@@ -360,10 +367,14 @@ def main():
                 if not dir_entry.name.endswith(".zip"):
                     print("SKIPPING -- not a .zip file:", dir_entry.name)
                     continue
-                rel_path = _make_path_relative(dir_entry.path)
+                rel_path = run_lib.make_path_relative(dir_entry.path)
                 try:
                     maybe_new_setting = process_model_at_path(
-                        rel_path, dir_entry.name, all_results, args.dry_run
+                        rel_path,
+                        dir_entry.name,
+                        all_results,
+                        args.analysis_type,
+                        dry_run=args.dry_run,
                     )
                 except ValueError as e:
                     print("SKIPPING -- error: ", dir_entry.name)
@@ -381,7 +392,7 @@ def main():
                         break
 
     added_new_runs = add_random_projections(
-        args.random_proj_seeds, all_results, args.dry_run
+        args.random_proj_seeds, all_results, args.analysis_type, dry_run=args.dry_run
     )
 
     if added_new_runs and not args.dry_run:
@@ -397,7 +408,7 @@ def main():
 
 
 def add_random_projections(
-    num_seeds: int, all_results: dict[Setting, Data], dry_run: bool
+    num_seeds: int, all_results: dict[Setting, Data], analysis_type: str, dry_run: bool
 ) -> bool:
     """Adds random projections to the results; updates all_results but does not save."""
     present_envs = {s.env_name for s in all_results}
@@ -429,17 +440,24 @@ def add_random_projections(
             if dry_run:
                 print("    dry run -- would process this.")
                 continue
-            results = lib.process_model(
-                env_name_to_data_mgr_cls[env],
-                obs_to_feats,
-            )
-            print("    linear acc:", results["linear"][0])
-            print("    nonlin acc:", results["nonlinear"][0])
-            _append_or_create(all_results, setting, None, results)
+
+            gather_results(all_results, setting, None, obs_to_feats, analysis_type)
+
+            # results = lib.train_classifier_for_extractor(
+            #     env_name_to_data_mgr_cls[env],
+            #     obs_to_feats,
+            # )
+            # # Reporting train stats only here.
+            # print("    linear acc:", results["linear"][0].acc)
+            # print("    nonlin acc:", results["nonlinear"][0].acc)
+            # run_lib.append_or_create(all_results, setting, None, results)
         return True
 
     added_new_run = False
     for env in present_envs:
+        if incompatible_setting(env, analysis_type):
+            print(f"Skipping {env} due to incompatible analysis type: {analysis_type}.")
+
         if env not in env_name_to_feat_dims:
             print()
             print(f"Skipping {env} for now --- parameters not set correctly.")
@@ -455,55 +473,40 @@ def add_random_projections(
         )
 
         print("Adding gaussian random projections for", env)
+        s = Setting(
+            # Multi-task is not relevant for random projections.
+            multitask=True,
+            env_name=env,
+            model_type=ModelType.RANDOM_PROJ_GAUSS,
+        )
         added_new_run = (
-            run_proj(
-                rand_projector_gauss,
-                Setting(
-                    # Multi-task is not relevant for random projections.
-                    multitask=True,
-                    env_name=env,
-                    model_type=ModelType.RANDOM_PROJ_GAUSS,
-                ),
-            )
+            run_proj(rand_projector_gauss, s)
             or added_new_run  # NOTE: this order is important.
         )
         print("Adding sparse random projections for", env)
+        s = Setting(
+            # Multi-task is not relevant for random projections.
+            multitask=True,
+            env_name=env,
+            model_type=ModelType.RANDOM_PROJ_SPARSE,
+        )
         added_new_run = (
-            run_proj(
-                rand_projector_sparse,
-                Setting(
-                    # Multi-task is not relevant for random projections.
-                    multitask=True,
-                    env_name=env,
-                    model_type=ModelType.RANDOM_PROJ_SPARSE,
-                ),
-            )
+            run_proj(rand_projector_sparse, s)
             or added_new_run  # NOTE: this order is important.
         )
     return added_new_run
 
 
-def _make_path_relative(path: str) -> str:
-    """Returns the path relative to the current working directory/project root."""
-    # Not really tested.
-    if path.startswith("/"):
-        return path[len(os.getcwd()) + 1 :]
-    return path
+def incompatible_setting(env: EnvName, analysis_type: str) -> bool:
+    if (
+        analysis_type == "minigrid_train" or analysis_type == "minigrid_transfer"
+    ) and env != EnvName.TwoRooms:
+        return True
 
+    if analysis_type == "seaquest" and env != EnvName.Seaquest:
+        return True
 
-def scantree(abs_path, exclude_dirs_abs_paths=None):
-    """Recursively yield DirEntry objects for given directory."""
-    # Modified from https://stackoverflow.com/a/33135143
-    if exclude_dirs_abs_paths is None:
-        exclude_dirs_abs_paths = []
-    for entry in os.scandir(abs_path):
-        if entry.is_dir(follow_symlinks=False):
-            if entry.path in exclude_dirs_abs_paths:
-                print("Skipping excluded dir:", entry.path)
-                continue
-            yield from scantree(entry.path, exclude_dirs_abs_paths)
-        else:
-            yield entry
+    return False
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from discovery.class_analysis import datasources
+from discovery.class_analysis.datatypes import BaseStats
 
 
 def _to_tensor(feats):
@@ -48,19 +49,15 @@ def _to_tensor(feats):
 
 def train_classifier(
     clf,
-    feats: Union[torch.Tensor, list[torch.Tensor]],
-    labels: list,
+    feats: torch.Tensor,
+    labels: torch.Tensor,
     n_epochs=500,
     batch_size=32,
-    test_size=0.0001,
-    random_state=None,
     disable_tqdm=False,
 ):
-    X = _to_tensor(feats)
-    y = torch.tensor(labels).float()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
+    """All data is used for training, and test_size is ignored."""
+    X_train = feats
+    y_train = labels
 
     best_acc = -np.inf
     best_weights = None
@@ -102,9 +99,7 @@ def train_classifier(
                 # update weights
                 optimizer.step()
                 # print progress
-                # TODO: the accuracy caculation is WRONG ------
-                # see evaluate
-                acc = (y_pred.round() == y_batch).float().mean()
+                acc = metrics.accuracy_score(y_batch, y_pred.detach().numpy().round())
                 bar.set_postfix(loss=float(final_loss), acc=float(acc))
         # # evaluate accuracy at end of each epoch
         # clf.eval()
@@ -125,12 +120,11 @@ def predictions(clf, feats: Union[torch.Tensor, list[torch.Tensor]]):
 
 def evaluate(clf, feats, labels, print_results=False):
     y_pred = predictions(clf, feats)
-    y = torch.tensor(labels).float()
 
     # acc_bad = (y_pred.round() == y).float().mean()
     y_pred_np = y_pred.detach().numpy().round()
     acc = metrics.accuracy_score(labels, y_pred_np)
-    c_m = metrics.confusion_matrix(labels, y_pred_np)
+    c_m = metrics.confusion_matrix(labels, y_pred_np, labels=[0, 1])
     sg_acc = c_m[1, 1] / (c_m[1, 1] + c_m[1, 0])
     non_sg_acc = c_m[0, 0] / (c_m[0, 0] + c_m[0, 1])
     if print_results:
@@ -167,7 +161,22 @@ def obs_to_feats_from_model(model, obss):
     return feats
 
 
-def process_saved_model(data_manager: datasources.DataSource, model_path: str) -> dict:
+def get_obs_to_feats_fn(obs_preprocessor_fn, model_path: str):
+    model = PPO.load(model_path)
+
+    def obs_to_feats(obss):
+        preproc_obss = obs_preprocessor_fn(obss)
+        tensors = obs_as_tensor(preproc_obss, model.device)
+        return obs_to_feats_from_model(model, tensors)
+
+    return obs_to_feats
+
+
+def train_classifier_from_model_path(
+    data_manager: datasources.DataSource, model_path: str, test_size: float = 0.0001
+) -> dict[str, tuple[BaseStats, BaseStats, dict]]:
+    # TODO: stop using this !!    Instead chain
+    # `get_obs_to_feats_fn` and `train_classifier_for_extractor`.
     model = PPO.load(model_path)
 
     def obs_to_feats(obss):
@@ -175,23 +184,26 @@ def process_saved_model(data_manager: datasources.DataSource, model_path: str) -
         tensors = obs_as_tensor(preproc_obss, model.device)
         return obs_to_feats_from_model(model, tensors)
 
-    return process_model(data_manager, obs_to_feats)
+    return train_classifier_for_extractor(
+        data_manager, obs_to_feats, test_size=test_size
+    )
 
 
-def test_saved_model(data_manager, clf, obs_to_feats_fn):
+def evaluate_extractor(data_manager, clf, obs_to_feats_fn) -> BaseStats:
     obss, images, labels = data_manager.get_data()
     feats = obs_to_feats_fn(obss)
-    acc, prec, recall, conf_mat = evaluate(clf, feats, labels, print_results=True)
-    return acc, prec, recall, conf_mat
+    acc, sg_acc, non_sg_acc, c_m = evaluate(clf, feats, labels, print_results=True)
+    return BaseStats(acc=acc, sg_acc=sg_acc, non_sg_acc=non_sg_acc, conf_mat=c_m)
 
 
-def process_model(
-    data_manager: datasources.DataSource,
+def train_classifier_for_extractor(
+    data_source: datasources.DataSource,
     obs_to_feats: Callable[[Iterable], list],
-) -> dict:
-    # def process_model(data_manager_cls, model_path: str):
+    random_state=None,  # For the train test split
+    test_size: float = 0.0,
+) -> dict[str, tuple[BaseStats, BaseStats, dict]]:
     """Process a single model."""
-    obss, images, labels = data_manager.get_data()
+    obss, images, labels = data_source.get_data()
     feats = obs_to_feats(obss)
     feat_dim = feats[0].shape[-1]
     classifiers = {
@@ -200,19 +212,45 @@ def process_model(
             input_size=feat_dim, hidden_size=64
         ),
     }
+
+    X = _to_tensor(feats)
+    y = torch.tensor(labels).float()
+    del feats, labels  # Not to accidentally use them.
+    if test_size == 0:
+        feats_train = X
+        labels_train = y
+        feats_test = None
+        labels_test = None
+    else:
+        feats_train, feats_test, labels_train, labels_test = train_test_split(
+            X, y, test_size=test_size, random_state=random_state
+        )
+
     results = {}
     for clf_name, clf in classifiers.items():
-        unused_best_acc = train_classifier(clf, feats, labels, disable_tqdm=True)
-        acc, sg_acc, non_sg_acc, conf_mat = evaluate(clf, feats, labels)
+        unused_best_acc = train_classifier(
+            clf, feats_train, labels_train, disable_tqdm=True
+        )
+        acc, sg_acc, non_sg_acc, conf_mat = evaluate(clf, feats_train, labels_train)
         details = {
             "classifier": clf,
             "obs_to_feats": obs_to_feats,
         }
-        results[clf_name] = (
-            float(acc),
-            float(sg_acc),
-            float(non_sg_acc),
-            conf_mat,
-            details,
+        train_stats = BaseStats(
+            acc=float(acc),
+            sg_acc=float(sg_acc),
+            non_sg_acc=float(non_sg_acc),
+            conf_mat=conf_mat,
         )
+        if feats_test is not None:
+            acc, sg_acc, non_sg_acc, conf_mat = evaluate(clf, feats_test, labels_test)
+            test_stats = BaseStats(
+                acc=float(acc),
+                sg_acc=float(sg_acc),
+                non_sg_acc=float(non_sg_acc),
+                conf_mat=conf_mat,
+            )
+        else:
+            test_stats = None
+        results[clf_name] = (train_stats, test_stats, details)
     return results
