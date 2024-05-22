@@ -107,6 +107,7 @@ _EXCLUDED_DIRECTORIES = [
 
     # Snapshot directories for Atari.
     "discovery/experiments/FeatAct_atari/models/dir_PPO_ALE",
+    "discovery/experiments/FeatAct_minigrid/models/dir_PPO_TwoRoomEnv_wm1nfc2w",
 ]
 # fmt: on
 
@@ -391,9 +392,15 @@ def main():
                     if num_new_settings == _MAX_NUM_MODELS_TO_PROCESS:
                         break
 
-    added_new_runs = add_random_projections(
+    added_rand_proj = add_random_projections(
         args.random_proj_seeds, all_results, args.analysis_type, dry_run=args.dry_run
     )
+
+    added_obs = add_obserations(
+        args.random_proj_seeds, all_results, args.analysis_type, dry_run=args.dry_run
+    )
+
+    added_new_runs = added_rand_proj or added_obs
 
     if added_new_runs and not args.dry_run:
         with open(args.result_path, "wb") as f:
@@ -408,7 +415,10 @@ def main():
 
 
 def add_random_projections(
-    num_seeds: int, all_results: dict[Setting, Data], analysis_type: str, dry_run: bool
+    num_seeds: int,
+    all_results: Union[dict[Setting, Data], dict[Setting, AllTrainTestStats]],
+    analysis_type: str,
+    dry_run: bool,
 ) -> bool:
     """Adds random projections to the results; updates all_results but does not save."""
     present_envs = {s.env_name for s in all_results}
@@ -492,6 +502,70 @@ def add_random_projections(
         )
         added_new_run = (
             run_proj(rand_projector_sparse, s)
+            or added_new_run  # NOTE: this order is important.
+        )
+    return added_new_run
+
+
+def add_obserations(
+    num_seeds: int,
+    all_results: Union[dict[Setting, Data], dict[Setting, AllTrainTestStats]],
+    analysis_type: str,
+    dry_run: bool,
+) -> bool:
+    """Adds observations to the results; updates all_results but does not save."""
+    present_envs = {s.env_name for s in all_results}
+
+    def run_proj(proj, setting) -> bool:
+        # Figure out how many seeds we want to run.
+        print(setting)
+        if setting in all_results:
+            print(
+                f"    already have {all_results[setting].num_runs} runs for this setting."
+            )
+            num_seeds_needed = max(0, num_seeds - all_results[setting].num_runs)
+            print(f"    Need {num_seeds_needed} more.")
+        else:
+            num_seeds_needed = num_seeds
+            print(f"    no runs for this setting yet, need {num_seeds_needed} more.")
+        if num_seeds_needed <= 0:
+            print("    skipping -- enough runs already.")
+            return False
+
+        def obs_to_feats(list_of_obs):
+            batch_of_flat = np.stack(list_of_obs, axis=0).reshape(len(list_of_obs), -1)
+            return proj(batch_of_flat)
+
+        for seed in tqdm.trange(num_seeds_needed):
+            if dry_run:
+                print("    dry run -- would process this.")
+                continue
+
+            gather_results(all_results, setting, None, obs_to_feats, analysis_type)
+        return True
+
+    added_new_run = False
+    for env in present_envs:
+        if incompatible_setting(env, analysis_type):
+            print(f"Skipping {env} due to incompatible analysis type: {analysis_type}.")
+
+        if env not in env_name_to_feat_dims:
+            print()
+            print(f"Skipping {env} for now --- parameters not set correctly.")
+            print()
+            continue
+
+        observation_map = lambda x: x
+
+        print("Adding observations for", env)
+        s = Setting(
+            # Multi-task is not relevant for observations.
+            multitask=True,
+            env_name=env,
+            model_type=ModelType.OBSERVATION,
+        )
+        added_new_run = (
+            run_proj(observation_map, s)
             or added_new_run  # NOTE: this order is important.
         )
     return added_new_run
