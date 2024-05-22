@@ -274,8 +274,8 @@ def gather_results(all_results, setting, wandb_id, obs_to_feats_fn, analysis_typ
         results = lib.train_classifier_for_extractor(
             env_name_to_data_mgr_cls[setting.env_name],
             obs_to_feats_fn,
-            test_size=0.00001,
-            # test_size=0.2,
+            # test_size=0.00001,
+            test_size=0.2,
         )
         print("    TRAIN linear acc:", results["linear"][0].acc)
         print("    TRAIN nonlin acc:", results["nonlinear"][0].acc)
@@ -290,6 +290,9 @@ def gather_results(all_results, setting, wandb_id, obs_to_feats_fn, analysis_typ
         run_lib.append_or_create_V2(all_results, setting, wandb_id, cur_results)
 
     elif analysis_type == "minigrid_transfer":
+        # if not setting.multitask:
+        #     print("    skipping -- not a multitask model.")
+
         train_results = lib.train_classifier_for_extractor(
             env_name_to_data_mgr_cls[setting.env_name]["transfer_train"],
             obs_to_feats_fn,
@@ -299,7 +302,7 @@ def gather_results(all_results, setting, wandb_id, obs_to_feats_fn, analysis_typ
 
         eval_data_source = env_name_to_data_mgr_cls[setting.env_name]["transfer_test"]
         transfer_results = {}
-        for key, (_, _, details) in train_results.keys():
+        for key, (_, _, details) in train_results.items():
             transfer_results[key] = lib.evaluate_extractor(
                 eval_data_source, details["classifier"], details["obs_to_feats"]
             )
