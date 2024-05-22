@@ -20,7 +20,7 @@ def on_key(event):
 ENV = "SeaquestNoFrameskip-v4"
 label_keys = ["0", "1", "2", "3"]  # air = 1, shoot = 2, dive = 3
 
-episode = 1
+episode = 59
 
 if episode is not None:
     path = f"datasets/AAD/clean/{ENV}/episode({episode}).hdf5"
@@ -34,6 +34,7 @@ num_images = state.shape[0]
 labels = np.zeros(num_images, dtype=int)
 current_frame = 0
 
+# TODO fix this so it doesnt slow down and plot every frame
 fig, ax = plt.subplots()
 ax.imshow(state[current_frame])
 fig.canvas.mpl_connect("key_press_event", on_key)
