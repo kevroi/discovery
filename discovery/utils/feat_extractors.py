@@ -74,6 +74,38 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
+    
+
+class MinigridAutoEncoder(MinigridFeaturesExtractor):
+    def __init__(
+        self,
+        observation_space: gym.Space,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+        last_layer_activation = "relu",
+    ) -> None:
+        super().__init__(observation_space, features_dim, normalized_image, last_layer_activation)
+        n_input_channels = observation_space.shape[0]
+
+        # Compute shape by doing one forward pass
+        with torch.no_grad():
+            cnn_out_shape = self.cnn[:5](
+                torch.as_tensor(observation_space.sample()[None]).float()
+            ).shape[2:]
+
+        self.decoder = nn.Sequential(
+            nn.Linear(features_dim, self.linear[0].in_features),
+            nn.Unflatten(1, (64, cnn_out_shape[0], cnn_out_shape[1])),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, (2, 2)),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 16, (2, 2)),
+            nn.ReLU(),
+            nn.ConvTranspose2d(16, n_input_channels, (2, 2)),
+        )
+
+    def decode(self, features: torch.Tensor) -> torch.Tensor:
+        return self.decoder(features)
 
 
 class FeaturesWithHallwayExtractor(MinigridFeaturesExtractor):

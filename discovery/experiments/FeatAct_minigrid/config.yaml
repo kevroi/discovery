@@ -1,7 +1,7 @@
 env_name: 'TwoRoomEnv'
 learner: 'PPO'
 project_name: 'two_rooms_newmultitask_cnn'  #  wandb and saved models dir
-timesteps: 1000000
+timesteps: 50000 # 1000000
 policy_type: 'CnnPolicy'
 cnn: 'minigrid' # 'nature', 'minigrid', 'minigrid_sp', 'minigrid_hallfeat'
 # activation: 'fta'
@@ -9,8 +9,9 @@ cnn: 'minigrid' # 'nature', 'minigrid', 'minigrid_sp', 'minigrid_hallfeat'
 activation: 'relu'
 feat_dim: 32
 stats_window_size: 100
-record_video: False
+record_video: True # False
 render_mode: 'rgb_array'
+reconstruction_loss: False # True
 
 # Shared hypers
 lr: 0.0003 # PPO_def: 3e-4

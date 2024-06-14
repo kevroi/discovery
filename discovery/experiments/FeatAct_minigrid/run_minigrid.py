@@ -8,6 +8,7 @@ from stable_baselines3 import PPO, DQN
 from discovery.agents.ddqn import DoubleDQN
 from discovery.utils.feat_extractors import *
 import wandb
+from discovery.agents.ppo import ReconPPO
 from discovery.utils.activations import *
 from discovery.experiments.FeatAct_minigrid.helpers import make_env
 from discovery.utils.save_callback import SnapshotCallback
@@ -75,8 +76,9 @@ def main(args):
             ),
         )
     elif hparam_yaml["cnn"] == "minigrid":
+        extractor_class = MinigridAutoEncoder if hparam_yaml["reconstruction_loss"] else MinigridFeaturesExtractor
         policy_kwargs = dict(
-            features_extractor_class=MinigridFeaturesExtractor,
+            features_extractor_class=extractor_class,
             features_extractor_kwargs=dict(
                 features_dim=hparam_yaml["feat_dim"],
                 last_layer_activation=hparam_yaml["activation"],
@@ -115,7 +117,8 @@ def main(args):
         )
 
     if hparam_yaml["learner"] == "PPO":
-        model = PPO(
+        algo_cls = ReconPPO if hparam_yaml["reconstruction_loss"] else PPO
+        model = algo_cls(
             hparam_yaml["policy_type"],
             env,
             learning_rate=hparam_yaml["lr"],

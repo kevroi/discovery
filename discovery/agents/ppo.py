@@ -6,6 +6,7 @@ import torch as th
 from gymnasium import spaces
 from torch.nn import functional as F
 
+from stable_baselines3 import PPO as SBPPO
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.policies import (
     ActorCriticCnnPolicy,
@@ -339,3 +340,53 @@ class PPO(OnPolicyAlgorithm):
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
         )
+
+
+class ReconstructionMixin():
+    """
+    This class is to be used in tandem with the other stable baselines policy learning algorithms.
+    It changes the train method so that the model also learns to reconstruct the input observations.
+    It first calls the reconstruction training method, and then policy learning algorithm `train()` method.
+    """
+    def __init__(self):
+        pass
+        assert hasattr(self.policy.features_extractor, 'decode'), \
+            "The features extractor must have a decode method!"
+        assert getattr(self.policy, 'share_features_extractor', True), \
+            "The policy and value function must share the same feature extractor!"
+
+    def train(self):
+        losses = []
+        n_samples = 0
+        for rollout_data in self.rollout_buffer.get(self.batch_size):
+            # Extract features and reconstruct
+            obs = rollout_data.observations
+            features = self.policy.extract_features(obs)
+            reconstruction = self.policy.features_extractor.decode(features)
+
+            # Reconstruction loss
+            loss = F.mse_loss(reconstruction, obs)
+            losses.append(loss.item() * len(obs))
+            n_samples += len(obs)
+
+            # Optimization step
+            self.policy.optimizer.zero_grad()
+            loss.backward()
+            th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            self.policy.optimizer.step()
+
+        self.logger.record("train/reconstruction_loss", np.sum(losses) / n_samples)
+
+
+class ReconPPO(SBPPO, ReconstructionMixin):
+    """
+    This class is a combination of the PPO algorithm and the ReconstructionMixin class.
+    It is used to train the policy to learn to reconstruct the input observations.
+    """
+    def __init__(self, *args, **kwargs):
+        SBPPO.__init__(self, *args, **kwargs)
+        ReconstructionMixin.__init__(self)
+        
+    def train(self):
+        ReconstructionMixin.train(self)
+        SBPPO.train(self)
