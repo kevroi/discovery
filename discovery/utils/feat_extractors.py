@@ -1,3 +1,5 @@
+from typing import Any, Dict, Tuple
+
 import torch
 import torch.nn as nn
 import gymnasium as gym
@@ -8,6 +10,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.preprocessing import is_image_space
 
 from discovery.utils.activations import CReLU, FTA
+from discovery.utils.vqvae import VQVAEModel
 
 
 class ClimbingFeatureExtractor(BaseFeaturesExtractor):
@@ -106,6 +109,82 @@ class MinigridAutoEncoder(MinigridFeaturesExtractor):
 
     def decode(self, features: torch.Tensor) -> torch.Tensor:
         return self.decoder(features)
+    
+    def reconstruct(
+            self, observations: torch.Tensor,
+        ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        return self.decode(self.forward(observations)), {}
+
+
+class MinigridVQVAE(BaseFeaturesExtractor):
+    def __init__(
+        self,
+        observation_space: gym.Space,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+        last_layer_activation = "relu",
+    ) -> None:
+        super().__init__(observation_space, features_dim)
+        if isinstance(observation_space, spaces.Dict):
+            observation_space = observation_space["image"]
+        n_input_channels = observation_space.shape[0]
+        embedding_dim = 64
+
+        encoder = nn.Sequential(
+            nn.Conv2d(n_input_channels, 16, (2, 2)),
+            nn.ReLU(),
+            nn.Conv2d(16, 32, (2, 2)),
+            nn.ReLU(),
+            nn.Conv2d(32, embedding_dim, (2, 2)),
+            nn.ReLU(),
+        )
+        decoder = nn.Sequential(
+            nn.ConvTranspose2d(embedding_dim, 32, (2, 2)),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 16, (2, 2)),
+            nn.ReLU(),
+            nn.ConvTranspose2d(16, n_input_channels, (2, 2)),
+        )
+
+        self.vqvae = VQVAEModel(
+            obs_dim = observation_space.shape,
+            codebook_size = 128,
+            embedding_dim = embedding_dim,
+            encoder = encoder,
+            decoder = decoder,
+        )
+
+        # Convert VQ-VAE discrete (torch.long) outputs to continuous-valued embedding vectors
+        self.embeds = nn.Embedding(128, embedding_dim)
+
+        # Compute shape by doing one forward pass
+        with torch.no_grad():
+            n_flatten = self.embeds(self.vqvae.encode(
+                torch.as_tensor(observation_space.sample()[None]).float()
+            )).numel()
+
+        if last_layer_activation == "relu":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        elif last_layer_activation == "crelu":
+            self.linear = nn.Sequential(
+                nn.Linear(n_flatten, features_dim // 2), CReLU()
+            )
+        elif last_layer_activation == "fta":
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim // 20), FTA())
+        elif last_layer_activation == "lrelu":
+            self.linear = nn.Sequential(
+                nn.Linear(n_flatten, features_dim), nn.LeakyReLU()
+            )
+
+    def forward(self, observations: torch.Tensor) -> torch.Tensor:
+        discrete_embeds = self.vqvae.encode(observations)
+        embeds = self.embeds(discrete_embeds)
+        return self.linear(torch.flatten(embeds, start_dim=1))
+    
+    def reconstruct(
+            self, observations: torch.Tensor,
+        ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        return self.vqvae(observations)
 
 
 class FeaturesWithHallwayExtractor(MinigridFeaturesExtractor):
@@ -380,3 +459,6 @@ class NatureCNN(BaseFeaturesExtractor):
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
+    
+
+

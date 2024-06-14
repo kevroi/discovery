@@ -76,9 +76,17 @@ def main(args):
             ),
         )
     elif hparam_yaml["cnn"] == "minigrid":
-        extractor_class = MinigridAutoEncoder if hparam_yaml["reconstruction_loss"] else MinigridFeaturesExtractor
+        extractor_class = MinigridAutoEncoder if hparam_yaml["recon_loss"] else MinigridFeaturesExtractor
         policy_kwargs = dict(
             features_extractor_class=extractor_class,
+            features_extractor_kwargs=dict(
+                features_dim=hparam_yaml["feat_dim"],
+                last_layer_activation=hparam_yaml["activation"],
+            ),
+        )
+    elif hparam_yaml["cnn"] == "minigrid_vqvae":
+        policy_kwargs = dict(
+            features_extractor_class=MinigridVQVAE,
             features_extractor_kwargs=dict(
                 features_dim=hparam_yaml["feat_dim"],
                 last_layer_activation=hparam_yaml["activation"],
@@ -132,7 +140,7 @@ def main(args):
             tensorboard_log=f"runs/{run_id}",
         )
 
-        if hparam_yaml["reconstruction_loss"]:
+        if hparam_yaml["recon_loss"]:
             algo_cls = ReconPPO
             ppo_params["recon_loss_weight"] = hparam_yaml["recon_loss_weight"]
         else:

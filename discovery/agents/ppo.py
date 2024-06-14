@@ -349,25 +349,29 @@ class ReconstructionMixin():
     It first calls the reconstruction training method, and then policy learning algorithm `train()` method.
     """
     def __init__(self, recon_loss_weight=1.0):
-        assert hasattr(self.policy.features_extractor, 'decode'), \
-            "The features extractor must have a decode method!"
+        assert hasattr(self.policy.features_extractor, 'reconstruct'), \
+            "The features extractor must have a `reconstruct` method!"
         assert getattr(self.policy, 'share_features_extractor', True), \
-            "The policy and value function must share the same feature extractor!"
+            "The policy and value functions must share the same feature extractor!"
         self.recon_loss_weight = recon_loss_weight
 
     def train(self):
         losses = []
+        aux_losses = []
         n_samples = 0
         for rollout_data in self.rollout_buffer.get(self.batch_size):
             # Extract features and reconstruct
             obs = rollout_data.observations
-            features = self.policy.extract_features(obs)
-            reconstruction = self.policy.features_extractor.decode(features)
+            reconstruction, aux_vars = self.policy.features_extractor.reconstruct(obs)
 
             # Reconstruction loss
             loss = F.mse_loss(reconstruction, obs) * self.recon_loss_weight
             losses.append(loss.item() * len(obs))
             n_samples += len(obs)
+
+            if 'loss' in aux_vars:
+                loss += aux_vars['loss']
+                aux_losses.append(aux_vars['loss'].item() * len(obs))
 
             # Optimization step
             self.policy.optimizer.zero_grad()
@@ -376,6 +380,8 @@ class ReconstructionMixin():
             self.policy.optimizer.step()
 
         self.logger.record("train/reconstruction_loss", np.sum(losses) / n_samples)
+        if aux_losses:
+            self.logger.record("train/auxiliary_recon_loss", np.sum(aux_losses) / n_samples)
 
 
 class ReconPPO(SBPPO, ReconstructionMixin):
