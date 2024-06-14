@@ -348,12 +348,12 @@ class ReconstructionMixin():
     It changes the train method so that the model also learns to reconstruct the input observations.
     It first calls the reconstruction training method, and then policy learning algorithm `train()` method.
     """
-    def __init__(self):
-        pass
+    def __init__(self, recon_loss_weight=1.0):
         assert hasattr(self.policy.features_extractor, 'decode'), \
             "The features extractor must have a decode method!"
         assert getattr(self.policy, 'share_features_extractor', True), \
             "The policy and value function must share the same feature extractor!"
+        self.recon_loss_weight = recon_loss_weight
 
     def train(self):
         losses = []
@@ -365,7 +365,7 @@ class ReconstructionMixin():
             reconstruction = self.policy.features_extractor.decode(features)
 
             # Reconstruction loss
-            loss = F.mse_loss(reconstruction, obs)
+            loss = F.mse_loss(reconstruction, obs) * self.recon_loss_weight
             losses.append(loss.item() * len(obs))
             n_samples += len(obs)
 
@@ -384,8 +384,10 @@ class ReconPPO(SBPPO, ReconstructionMixin):
     It is used to train the policy to learn to reconstruct the input observations.
     """
     def __init__(self, *args, **kwargs):
+        if 'recon_loss_weight' in kwargs:
+            recon_loss_weight = kwargs.pop('recon_loss_weight')
         SBPPO.__init__(self, *args, **kwargs)
-        ReconstructionMixin.__init__(self)
+        ReconstructionMixin.__init__(self, recon_loss_weight)
         
     def train(self):
         ReconstructionMixin.train(self)

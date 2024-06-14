@@ -11,7 +11,9 @@ feat_dim: 32
 stats_window_size: 100
 record_video: True # False
 render_mode: 'rgb_array'
-reconstruction_loss: False # True
+
+reconstruction_loss: False
+recon_loss_weight: 0.1
 
 # Shared hypers
 lr: 0.0003 # PPO_def: 3e-4

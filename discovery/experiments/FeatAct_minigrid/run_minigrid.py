@@ -117,10 +117,9 @@ def main(args):
         )
 
     if hparam_yaml["learner"] == "PPO":
-        algo_cls = ReconPPO if hparam_yaml["reconstruction_loss"] else PPO
-        model = algo_cls(
-            hparam_yaml["policy_type"],
-            env,
+        ppo_params = dict(
+            policy=hparam_yaml["policy_type"],
+            env=env,
             learning_rate=hparam_yaml["lr"],
             gamma=hparam_yaml["gamma"],
             batch_size=hparam_yaml["batch_size"],
@@ -132,6 +131,14 @@ def main(args):
             device=args.device,
             tensorboard_log=f"runs/{run_id}",
         )
+
+        if hparam_yaml["reconstruction_loss"]:
+            algo_cls = ReconPPO
+            ppo_params["recon_loss_weight"] = hparam_yaml["recon_loss_weight"]
+        else:
+            algo_cls = PPO
+
+        model = algo_cls(**ppo_params)
         if hparam_yaml["use_wandb"]:
             wandb.watch(
                 model.policy.features_extractor, log_freq=100, log="all", log_graph=True
