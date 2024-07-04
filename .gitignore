@@ -3,7 +3,9 @@ discovery/experiments/FeatAct_minigrid/model_snapshots
 discovery/experiments/FeatAct_minigrid/models
 discovery/experiments/FeatAct_minigrid/models.zip
 old_minigrid_models
-datasets/AAD/clean/SeaquestNoFrameskip-v4/
+datasets/AAD/anomaly
+datasets/AAD/raw
+datasets/AAD/clean/*v4
 
 plots/classifier_res/
 
