@@ -19,11 +19,11 @@ def calculate_bootstrapped_ci(data, n_bootstrap=1000, ci_level=0.95):
 
 
 def plot_wandb_data(
-    project_name="SubgoalFeats_CosSim",
-    env_name="MiniGrid-DoorKey-5x5-v0",
+    project_name="two_rooms_realmultitask",
+    env_name="TwoRoomEnv",
     learner="PPO",
     activation="relu",
-    feat_dim=40,
+    # feat_dim=40,
     metric="rollout/ep_rew_mean",
     fig=None,
     color=None,
@@ -31,7 +31,7 @@ def plot_wandb_data(
 ):
 
     df = pd.read_csv(
-        f"experiments/FeatAct_minigrid/wandb_export_data/{project_name}_{env_name}_{learner}_{activation}_{feat_dim}_data.csv"
+        f"discovery/experiments/FeatAct_minigrid/wandb_export_data/{project_name}_{env_name}_{learner}_{activation}.csv"
     )
     mean_rewards = df.iloc[:, 1:].mean(
         axis=1
@@ -67,16 +67,24 @@ if __name__ == "__main__":
         "lrelu": "#009988",
     }
     fig = None
-    activations = ["relu", "fta", "crelu"]
+    activations = [
+        "relu",
+        "fta",
+        # "crelu",
+    ]
     for act in activations:
         fig = plot_wandb_data(activation=act, fig=fig, color=colors[act])
     plt.gca().spines["top"].set_visible(False)
     plt.gca().spines["right"].set_visible(False)
+    posiitons = [0, 100, 200, 300, 400, 500]
+    labels = ["0", "200k", "400k", "600k", "800k", "1M"]
+    plt.xticks(posiitons, labels, fontsize=18)
     plt.xlabel("Episode", fontsize=18)
     plt.ylabel("Return", fontsize=18)
     plt.xticks(fontsize=18)
     plt.yticks(fontsize=18)
-    plt.xlim(0, 200)
+    plt.ylim(0, 1)
     plt.grid(False)
+    # plt.legend(fontsize=18, loc="upper left")
     # plt.show()
-    plt.savefig("plots/learning_curves/2room_diff_acts.pdf")
+    plt.savefig("plots/learning_curves/TwoRooms_multitask_diff_acts.pdf")
