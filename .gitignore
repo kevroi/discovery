@@ -7,7 +7,7 @@ datasets/AAD/anomaly
 datasets/AAD/raw
 datasets/AAD/clean/*v4
 
-plots/classifier_res/
+old_discovery_stuff/
 
 
 *.pkl
