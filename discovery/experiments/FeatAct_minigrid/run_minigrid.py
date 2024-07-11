@@ -90,6 +90,7 @@ def main(args):
             features_extractor_kwargs=dict(
                 features_dim=hparam_yaml["feat_dim"],
                 last_layer_activation=hparam_yaml["activation"],
+                codebook_size=hparam_yaml["codebook_size"],
             ),
         )
     elif hparam_yaml["cnn"] == "minigrid_sp":

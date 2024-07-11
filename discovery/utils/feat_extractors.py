@@ -126,6 +126,7 @@ class MinigridVQVAE(BaseFeaturesExtractor):
         features_dim: int = 512,
         normalized_image: bool = False,
         last_layer_activation="relu",
+        codebook_size: int = 128,
     ) -> None:
         super().__init__(observation_space, features_dim)
         if isinstance(observation_space, spaces.Dict):
@@ -151,14 +152,14 @@ class MinigridVQVAE(BaseFeaturesExtractor):
 
         self.vqvae = VQVAEModel(
             obs_dim=observation_space.shape,
-            codebook_size=128,
+            codebook_size=codebook_size,
             embedding_dim=embedding_dim,
             encoder=encoder,
             decoder=decoder,
         )
 
         # Convert VQ-VAE discrete (torch.long) outputs to continuous-valued embedding vectors
-        self.embeds = nn.Embedding(128, embedding_dim)
+        self.embeds = nn.Embedding(codebook_size, embedding_dim)
 
         # Compute shape by doing one forward pass
         with torch.no_grad():
@@ -171,15 +172,11 @@ class MinigridVQVAE(BaseFeaturesExtractor):
         if last_layer_activation == "relu":
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
         elif last_layer_activation == "crelu":
-            self.linear = nn.Sequential(
-                nn.Linear(n_flatten, features_dim // 2), CReLU()
-            )
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim // 2), CReLU())
         elif last_layer_activation == "fta":
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim // 20), FTA())
         elif last_layer_activation == "lrelu":
-            self.linear = nn.Sequential(
-                nn.Linear(n_flatten, features_dim), nn.LeakyReLU()
-            )
+            self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.LeakyReLU())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         discrete_embeds = self.vqvae.encode(observations)
