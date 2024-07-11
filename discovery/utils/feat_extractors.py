@@ -77,7 +77,7 @@ class MinigridFeaturesExtractor(BaseFeaturesExtractor):
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
-    
+
 
 class MinigridAutoEncoder(MinigridFeaturesExtractor):
     def __init__(
@@ -85,9 +85,11 @@ class MinigridAutoEncoder(MinigridFeaturesExtractor):
         observation_space: gym.Space,
         features_dim: int = 512,
         normalized_image: bool = False,
-        last_layer_activation = "relu",
+        last_layer_activation="relu",
     ) -> None:
-        super().__init__(observation_space, features_dim, normalized_image, last_layer_activation)
+        super().__init__(
+            observation_space, features_dim, normalized_image, last_layer_activation
+        )
         n_input_channels = observation_space.shape[0]
 
         # Compute shape by doing one forward pass
@@ -109,10 +111,11 @@ class MinigridAutoEncoder(MinigridFeaturesExtractor):
 
     def decode(self, features: torch.Tensor) -> torch.Tensor:
         return self.decoder(features)
-    
+
     def reconstruct(
-            self, observations: torch.Tensor,
-        ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        self,
+        observations: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
         return self.decode(self.forward(observations)), {}
 
 
@@ -122,7 +125,7 @@ class MinigridVQVAE(BaseFeaturesExtractor):
         observation_space: gym.Space,
         features_dim: int = 512,
         normalized_image: bool = False,
-        last_layer_activation = "relu",
+        last_layer_activation="relu",
     ) -> None:
         super().__init__(observation_space, features_dim)
         if isinstance(observation_space, spaces.Dict):
@@ -147,11 +150,11 @@ class MinigridVQVAE(BaseFeaturesExtractor):
         )
 
         self.vqvae = VQVAEModel(
-            obs_dim = observation_space.shape,
-            codebook_size = 128,
-            embedding_dim = embedding_dim,
-            encoder = encoder,
-            decoder = decoder,
+            obs_dim=observation_space.shape,
+            codebook_size=128,
+            embedding_dim=embedding_dim,
+            encoder=encoder,
+            decoder=decoder,
         )
 
         # Convert VQ-VAE discrete (torch.long) outputs to continuous-valued embedding vectors
@@ -159,9 +162,11 @@ class MinigridVQVAE(BaseFeaturesExtractor):
 
         # Compute shape by doing one forward pass
         with torch.no_grad():
-            n_flatten = self.embeds(self.vqvae.encode(
-                torch.as_tensor(observation_space.sample()[None]).float()
-            )).numel()
+            n_flatten = self.embeds(
+                self.vqvae.encode(
+                    torch.as_tensor(observation_space.sample()[None]).float()
+                )
+            ).numel()
 
         if last_layer_activation == "relu":
             self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
@@ -180,10 +185,11 @@ class MinigridVQVAE(BaseFeaturesExtractor):
         discrete_embeds = self.vqvae.encode(observations)
         embeds = self.embeds(discrete_embeds)
         return self.linear(torch.flatten(embeds, start_dim=1))
-    
+
     def reconstruct(
-            self, observations: torch.Tensor,
-        ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        self,
+        observations: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
         return self.vqvae(observations)
 
 
@@ -459,6 +465,3 @@ class NatureCNN(BaseFeaturesExtractor):
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         return self.linear(self.cnn(observations))
-    
-
-
