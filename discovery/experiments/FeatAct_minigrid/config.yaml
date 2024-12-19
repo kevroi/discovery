@@ -4,11 +4,9 @@ project_name: 'TestingVQVAE'  #  wandb and saved models dir
 timesteps: 200000
 policy_type: 'CnnPolicy'
 cnn: 'minigrid_vqvae' # 'minigrid_vqvae', 'nature', 'minigrid', 'minigrid_sp', 'minigrid_hallfeat'
-# activation: 'fta'
-# feat_dim: 640
-activation: 'relu'
+activation: 'relu' # 'relu', 'fta', 'crelu', 'lrelu'
 feat_dim: 32
-stats_window_size: 100
+stats_window_size: 100 # moving avg window for wandb
 record_video: False
 render_mode: 'rgb_array'
 
@@ -25,7 +23,7 @@ batch_size: 96 # PPO_def: 64, DQN_def: 32
 # PPO hypers & SB3 defaults
 n_epochs: 10 # 10
 n_steps: 128 # 2048
-n_envs: 16 # 1 #TODO this affects DDQN too!
+n_envs: 16 # 1
 
 # (D)DQN hypers & SB3 defaults
 learning_starts: 1000 # 100
@@ -33,7 +31,6 @@ train_freq: 1 # 4
 exploration_final_eps: 0.1 # 0.05
 target_update_interval: 500 # 10000
 
-# Env-specific hypers
+# Env-specific settings
 random_hallway: True # TwoRoomEnv
-# random_hallway: False # TwoRoomEnv
 variants: [1, 3, 5, 6] # TwoRoomEnv
