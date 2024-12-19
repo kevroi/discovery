@@ -11,6 +11,16 @@ import matplotlib.pyplot as plt
 
 # HELPER FUNCTIONS ##
 def make_env(config):
+    """
+    Create a MiniGrid environment with the specified configuration and wrappers.
+
+    Args:
+    config (dict): The configuration dictionary.
+
+    Returns:
+    gym.Env: The MiniGrid environment.
+    """
+
     if config["env_name"] == "FourRoomChainEnv":
         from environments.custom_minigrids import FourRoomChainEnv
 
@@ -78,6 +88,16 @@ def make_env(config):
 
 ## HELPER FUNCTIONS ##
 def pre_process_obs_no_tensor(obs):
+    """
+    Adds batch axis to singleton observations and correctly places the colour channel.
+
+    Args:
+    obs (np.ndarray): The observation.
+
+    Returns:
+    np.ndarray: The pre-processed observation.
+    """
+
     if obs.ndim == 3:
         obs = np.expand_dims(
             obs, axis=0
@@ -87,10 +107,33 @@ def pre_process_obs_no_tensor(obs):
 
 
 def pre_process_obs(obs, model):
-    return obs_as_tensor(pre_process_obs_no_tensor(obs), model.policy.device)
+    """
+    For a given observation, pre-process it and convert it to a tensor.
+
+    Args:
+    obs (np.ndarray): The observation.
+    model (BaseAlgorithm): The model.
+
+    Returns:
+    torch.Tensor: The pre-processed observation as a tensor.
+    """
+
+    pre_processed_arr = pre_process_obs_no_tensor(obs)
+    return obs_as_tensor(pre_processed_arr, model.policy.device)
 
 
 def extract_feature(agent, obs):
+    """
+    Use the agent's representation to extract features from the observation.
+
+    Args:
+    agent (BaseAlgorithm): The agent.
+    obs (torch.Tensor): The observation.
+
+    Returns:
+    torch.Tensor: The feature vector.
+    """
+
     # assuming this function is used within a torch.no_grad() context
     obs = pre_process_obs(obs, agent)
     if agent.__class__.__name__ == "DoubleDQN":
@@ -109,18 +152,48 @@ def extract_feature(agent, obs):
 
 
 def cosine_similarity(phi, phi_goal):
-    # assuming phi and phi_goal are unit vectors
+    """
+    Computes the cosine similarity between two vectors.
+    Assumes phi and phi_goal are unit vectors.
+
+    Args:
+    phi (torch.Tensor): The first vector.
+    phi_goal (torch.Tensor): The second vector.
+
+    Returns:
+    float: The cosine similarity."""
     return torch.dot(phi, phi_goal)
 
 
 def cosine_similarity_matrix(feature_activations):
-    # assuming feature_activations is a tensor of unit vectors
+    """
+    Computes all pair-wise cosine sim, assuming feature_activations is a tensor of unit vectors.
+
+    Args:
+    feature_activations (torch.Tensor): The feature activations.
+
+    Returns:
+    torch.Tensor: The cosine similarity matrix.
+    """
     return torch.mm(feature_activations, feature_activations.T)
 
 
 def plot_average_heatmap(
     agent_name, env_name, folder_path, plot_sg_cossim=False, feat_dim=8, activation=None
 ):
+    """
+    Plot the average heatmap of the cosine similarity matrix of the feature activations.
+
+    Args:
+    agent_name (str): The name of the agent.
+    env_name (str): The name of the environment.
+    folder_path (str): The path to the folder containing the cosine similarity matrices.
+    plot_sg_cossim (bool): Whether to plot the cosine similarity of the subgoals.
+    feat_dim (int): The dimension of the feature space.
+    activation (str): The activation function used.
+
+    Returns:
+    None"""
     # Initialize variables to store the sum of matrices and the count of matrices
     sum_matrix = None
     std_error_matrix = None
@@ -189,6 +262,9 @@ def plot_average_heatmap(
 
 
 def plot_identity_heatmap():
+    """
+    The cosine similarity matrix of in the tabular setting is an identity matrix.
+    """
     identity_matrix = np.identity(11)
     plt.figure(figsize=(10, 8))
     plt.imshow(identity_matrix, cmap="gist_heat", interpolation="nearest")
@@ -201,6 +277,18 @@ def plot_identity_heatmap():
 
 
 def plot_sg_cossim(agent_name, env_name, folder_path, feat_dims=[120]):
+    """
+    Plot the cosine similarity of the subgoals with the feature activations.
+
+    Args:
+    agent_name (str): The name of the agent.
+    env_name (str): The name of the environment.
+    folder_path (str): The path to the folder containing the cosine similarity matrices.
+    feat_dims (list): The dimensions of the feature space.
+
+    Returns:
+    None"""
+    # Plot the cosine similarity of the subgoals with the feature activations.
     subgoal_indices = get_subgoal_index({"env_name": env_name})
     for i, index in enumerate(subgoal_indices):
         plt.figure()
@@ -262,6 +350,19 @@ def plot_sg_cossim(agent_name, env_name, folder_path, feat_dims=[120]):
 
 
 def plot_sg_cossim_diff_act(agent_name, env_name, folder_paths, feat_dims=[12]):
+    """
+    Plot the cosine similarity of the subgoals with the feature activations for
+    different activation functions.
+
+    Args:
+    agent_name (str): The name of the agent.
+    env_name (str): The name of the environment.
+    folder_paths (list): The paths to the folders containing the cosine similarity matrices.
+    feat_dims (list): The dimensions of the feature space.
+
+    Returns:
+    None
+    """
     subgoal_indices = get_subgoal_index({"env_name": env_name})
     colors = {
         "experiments/FeatAct_minigrid/cos_sim_matrices_relu": "#0077BB",
@@ -345,6 +446,21 @@ def plot_sg_cossim_diff_act(agent_name, env_name, folder_paths, feat_dims=[12]):
 
 
 def plot_sg_cossim_diff_feats(agent_name, env_name, folder_path, feat_dims=[8, 32]):
+    """
+    Plot the cosine similarity of the subgoals with the feature activations for
+    different feature dimensions.
+
+    Args:
+    agent_name (str): The name of the agent.
+    env_name (str): The name of the environment.
+    folder_path (str): The path to the folder containing the cosine similarity matrices.
+    feat_dims (list): The dimensions of the feature space.
+
+    Returns:
+    None
+    """
+
+    ### COLOR GRADIENTS ###
     # # BLUE Gradient
     # colors = {"2": "#79abe1",
     #       "32": "#0077BB",
@@ -432,8 +548,15 @@ def plot_sg_cossim_diff_feats(agent_name, env_name, folder_path, feat_dims=[8, 3
 
 
 def get_subgoal_index(config):
-    """Along the optimal trajectory, this function returns the timestep of the subgoal.
+    """
+    Along the optimal trajectory, this function returns the timestep of the subgoal.
     This is the index of the observation in the feature_activation matrix.
+
+    Args:
+    config (dict): The configuration dictionary.
+
+    Returns:
+    list: The indices of the subgoals.
     """
     if config["env_name"] == "MiniGrid-DoorKey-5x5-v0":
         subgoal_indices = [2, 6]  # after pickuing up key, after opening door

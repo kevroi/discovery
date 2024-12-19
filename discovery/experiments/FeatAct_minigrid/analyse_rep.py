@@ -14,6 +14,16 @@ Functions to analyse the representations learned by the agent.
 
 
 def get_obs(env, see_obs=False):
+    """
+    Gets the observations at every timestep for the optimal policy in DoorKey.
+
+    Args:
+    env (gym.Env): The environment.
+    see_obs (bool): Whether to render the environment at each timestep.
+
+    Returns:
+    List: A list of observations at each timestep.
+    """
     print(env.get_attr("spec")[0].id)
     if env.get_attr("spec")[0].id == "MiniGrid-DoorKey-5x5-v0":
         # # Vector Action Encoding:
@@ -69,6 +79,15 @@ def get_obs(env, see_obs=False):
 
 
 def get_bad_obs(env):
+    """
+    Get the observations for a bad policy in DoorKey.
+
+    Args:
+    env (gym.Env): The environment.
+
+    Returns:
+    List: A list of observations at each timestep.
+    """
     if env.get_attr("spec")[0].id == "MiniGrid-DoorKey-5x5-v0":
         obs_list = []
         obs = env.reset()
@@ -87,6 +106,17 @@ def get_bad_obs(env):
 
 
 def get_feats(model, config, see_bad_obs=False):
+    """
+    Gets the feature activations for the observations.
+
+    Args:
+    model (BaseAlgorithm): The trained model.
+    config (dict): The configuration dictionary.
+    see_bad_obs (bool): Whether to see the feature activations for a bad policy.
+
+    Returns:
+    Tensor: The feature activations.
+    """
     env = DummyVecEnv([lambda: make_env(config=config)])
     env.seed(0)
     if see_bad_obs:
@@ -138,6 +168,15 @@ def get_feats(model, config, see_bad_obs=False):
 
 
 def see_feats(feature_activations):
+    """
+    Visualizes the feature activations.
+
+    Args:
+    feature_activations (Tensor): The feature activations.
+
+    Returns:
+    None
+    """
     plt.figure()
     plt.imshow(feature_activations, cmap="hot", interpolation="nearest")
     plt.colorbar()
@@ -145,6 +184,16 @@ def see_feats(feature_activations):
 
 
 def save_feats(feature_activations, config):
+    """
+    Saves the feature activations.
+
+    Args:
+    feature_activations (Tensor): The feature activations.
+    config (dict): The configuration dictionary.
+
+    Returns:
+    None
+    """
     save_path = f"experiments/FeatAct_minigrid/feat_acts/feature_activations"
     np.save(
         save_path + f"_{config['env_name']}.npy", feature_activations.numpy()

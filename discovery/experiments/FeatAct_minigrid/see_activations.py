@@ -4,6 +4,11 @@ import matplotlib.pyplot as plt
 from utils.activations import *
 import matplotlib.cm as cm
 
+"""
+This script was used to visualise the effects of different activation functions on 2D feature vectors.
+The resulting plots are available in plots/activations.
+"""
+
 # Number of random tensors to generate
 num_tensors = 5
 # Set the seed for reproducibility

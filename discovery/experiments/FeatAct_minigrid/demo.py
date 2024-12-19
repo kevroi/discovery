@@ -13,6 +13,10 @@ from stable_baselines3.common.utils import obs_as_tensor
 from environments.custom_minigrids import TwoRoomEnv, FourRoomEnv, FourRoomChainEnv
 import pygame
 
+"""
+Manually control the agent in MiniGrid environments.
+"""
+
 config = {
     "env_name": "TwoRoomEnv",
     # "env_name": "FourRoomEnv",
