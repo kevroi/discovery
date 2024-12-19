@@ -1,13 +1,12 @@
 import os
-import random
 import numpy as np
 import yaml
 from argparse import ArgumentParser
 from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3 import PPO, DQN
+import wandb
 from discovery.agents.ddqn import DoubleDQN
 from discovery.utils.feat_extractors import *
-import wandb
 from discovery.agents.ppo import ReconPPO
 from discovery.utils.activations import *
 from discovery.experiments.FeatAct_minigrid.helpers import make_env
@@ -220,6 +219,7 @@ def main(args):
         check_freq=100_000 // hparam_yaml["n_envs"], log_dir=snapshot_dir, verbose=1
     )
 
+    # Train and save agent
     print(
         f"Training {hparam_yaml['learner']} on {hparam_yaml['env_name']} with {hparam_yaml['feat_dim']} features."
     )
@@ -228,6 +228,7 @@ def main(args):
     model.save(save_loc)
     print(f"Model saved at {save_loc}")
 
+    # Analyse representation if needed
     if hparam_yaml["analyse_rep"]:
         from analyse_rep import get_feats
 
