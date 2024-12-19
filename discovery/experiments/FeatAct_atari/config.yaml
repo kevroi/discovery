@@ -6,8 +6,6 @@ frame_stack: 4
 feat_extractor: 'cnn'
 activation: 'relu'
 feat_dim: 512
-# activation: 'fta'
-# feat_dim: 10240  # 512
 policy_type: 'CnnPolicy'
 stats_window_size: 10
 record_video: False
@@ -21,7 +19,7 @@ batch_size: 96 # PPO_def: 64, DQN_def: 32
 # PPO hypers & SB3 defaults
 n_epochs: 4 # 10
 n_steps: 128 # 2048
-n_envs: 8 # 1 #TODO this affects DDQN too!
+n_envs: 8 # 1
 
 # (D)DQN hypers & SB3 defaults
 learning_starts: 1000 # 100

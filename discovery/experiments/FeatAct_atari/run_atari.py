@@ -15,6 +15,16 @@ from discovery.utils.save_callback import SnapshotCallback
 
 
 def main(args):
+    """
+    Reads in the hyperparameters from the config file and command line arguments,
+    sets up the environment and agent, and trains the agent.
+    Args:
+    args (argparse.Namespace): Command line arguments.
+
+    Returns:
+    None
+    """
+
     # Load YAML hyperparameters
     with open(f"discovery/experiments/FeatAct_atari/{args.config_file}", "r") as f:
         hparam_yaml = yaml.safe_load(f)
@@ -24,10 +34,6 @@ def main(args):
             hparam_yaml[k] = v
         else:
             print(f"Using default value for {k}: {hparam_yaml[k]}")
-
-    # # Set random seed
-    # np.random.seed(hparam_yaml['seed'])   # TODO: Check if this is the best way to set the seed
-    # random.seed(hparam_yaml['seed'])
 
     # Setup logger if using wandb
     if hparam_yaml["use_wandb"]:
@@ -152,20 +158,13 @@ def main(args):
     model.save(save_loc)
     print(f"Model saved at {save_loc}")
 
-    # if hparam_yaml["analyse_rep"]:
-    #     from analyse_rep import get_feats
-
-    # feature_activations = get_feats(model, hparam_yaml)
-    # feature_activations = get_feats(model, hparam_yaml, see_bad_obs=True) # Uncomment to analyse bad observations too
-
 
 if __name__ == "__main__":
 
     os.environ["WANDB__SERVICE_WAIT"] = "300"  # Waiting time for wandb to start
 
     parser = ArgumentParser()
-    # The config file and things we want to sweep over (overwriting the config file)
-    # CAREFUL: These default args also overwrite the config file
+    # The config file defaults and its CL args overwrites, in order to sweep hyperparameters
     parser.add_argument(
         "--config_file",
         type=str,
@@ -201,11 +200,6 @@ if __name__ == "__main__":
         type=int,
         default=-1,
         help="Number of the run for multirun experiments.",
-    )
-    parser.add_argument(
-        "--analyse_rep",
-        action="store_true",  # set to false if we do not pass this argument
-        help="Raise the flag to analyse feature vector.",
     )
     parser.add_argument(
         "--use_wandb",

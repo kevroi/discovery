@@ -240,8 +240,7 @@ if __name__ == "__main__":
     os.environ["WANDB__SERVICE_WAIT"] = "300"  # Waiting time for wandb to start
 
     parser = ArgumentParser()
-    # The config file and things we want to sweep over (overwriting the config file)
-    # These CL args overwrite the config file
+    # The config file defaults and its CL args overwrites, in order to sweep hyperparameters
     parser.add_argument(
         "--config_file",
         type=str,
