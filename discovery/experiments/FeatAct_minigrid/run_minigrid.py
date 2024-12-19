@@ -15,6 +15,16 @@ from discovery.utils.save_callback import SnapshotCallback
 
 
 def main(args):
+    """
+    Reads in the hyperparameters from the config file and command line arguments,
+    sets up the environment and agent, and trains the agent.
+    Args:
+    args (argparse.Namespace): Command line arguments.
+
+    Returns:
+    None
+    """
+
     # Load YAML hyperparameters
     with open(f"discovery/experiments/FeatAct_minigrid/{args.config_file}", "r") as f:
         hparam_yaml = yaml.safe_load(f)
@@ -24,10 +34,6 @@ def main(args):
             hparam_yaml[k] = v
         else:
             print(f"Using default value for {k}: {hparam_yaml[k]}")
-
-    # # Set random seed
-    # np.random.seed(hparam_yaml['seed'])   # TODO: Check if this is the best way to set the seed
-    # random.seed(hparam_yaml['seed'])
 
     # Setup logger if using wandb
     if hparam_yaml["use_wandb"]:
@@ -76,7 +82,11 @@ def main(args):
             ),
         )
     elif hparam_yaml["cnn"] == "minigrid":
-        extractor_class = MinigridAutoEncoder if hparam_yaml["recon_loss"] else MinigridFeaturesExtractor
+        extractor_class = (
+            MinigridAutoEncoder
+            if hparam_yaml["recon_loss"]
+            else MinigridFeaturesExtractor
+        )
         policy_kwargs = dict(
             features_extractor_class=extractor_class,
             features_extractor_kwargs=dict(
@@ -231,7 +241,7 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
     # The config file and things we want to sweep over (overwriting the config file)
-    # CAREFUL: These default args also overwrite the config file
+    # These CL args overwrite the config file
     parser.add_argument(
         "--config_file",
         type=str,
