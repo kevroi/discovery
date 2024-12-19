@@ -56,7 +56,7 @@ nest-asyncio==1.6.0
 networkx==3.3
 numpy==1.25.2
 oauthlib==3.2.2
-# opencv-python==4.8.1.78
+opencv-python==4.8.1.78
 packaging==24.0
 pandas==2.1.0
 parso==0.8.4
